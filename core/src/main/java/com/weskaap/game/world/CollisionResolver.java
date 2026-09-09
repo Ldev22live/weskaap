@@ -10,6 +10,12 @@ public final class CollisionResolver {
     private CollisionResolver() {
     }
 
+    public static void move(com.badlogic.gdx.math.Rectangle bounds, float xAmount, float yAmount,
+                            List<Rectangle> obstacles, float worldWidth, float worldHeight) {
+        moveX(bounds, xAmount, obstacles, worldWidth);
+        moveY(bounds, yAmount, obstacles, worldHeight);
+    }
+
     public static void move(Hero hero, float xAmount, float yAmount, List<Rectangle> obstacles,
                             float worldWidth, float worldHeight) {
         moveX(hero, xAmount, obstacles, worldWidth);
@@ -18,8 +24,14 @@ public final class CollisionResolver {
 
     private static void moveX(Hero hero, float amount, List<Rectangle> obstacles, float worldWidth) {
         Rectangle bounds = hero.getCollisionBounds();
+        moveX(bounds, amount, obstacles, worldWidth);
+        hero.setPosition(bounds.x + bounds.width / 2f, bounds.y + bounds.height / 2f);
+    }
+
+    private static void moveX(Rectangle bounds, float amount, List<Rectangle> obstacles, float worldWidth) {
         float halfWidth = bounds.width / 2f;
-        float targetX = MathUtils.clamp(hero.getX() + amount, halfWidth, worldWidth - halfWidth);
+        float centerX = bounds.x + halfWidth;
+        float targetX = MathUtils.clamp(centerX + amount, halfWidth, worldWidth - halfWidth);
 
         for (Rectangle obstacle : obstacles) {
             if (!rangesOverlap(bounds.y, bounds.y + bounds.height, obstacle.y, obstacle.y + obstacle.height)) {
@@ -33,13 +45,19 @@ public final class CollisionResolver {
             }
         }
 
-        hero.setPosition(targetX, hero.getY());
+        bounds.x = targetX - halfWidth;
     }
 
     private static void moveY(Hero hero, float amount, List<Rectangle> obstacles, float worldHeight) {
         Rectangle bounds = hero.getCollisionBounds();
+        moveY(bounds, amount, obstacles, worldHeight);
+        hero.setPosition(bounds.x + bounds.width / 2f, bounds.y + bounds.height / 2f);
+    }
+
+    private static void moveY(Rectangle bounds, float amount, List<Rectangle> obstacles, float worldHeight) {
         float halfHeight = bounds.height / 2f;
-        float targetY = MathUtils.clamp(hero.getY() + amount, halfHeight, worldHeight - halfHeight);
+        float centerY = bounds.y + halfHeight;
+        float targetY = MathUtils.clamp(centerY + amount, halfHeight, worldHeight - halfHeight);
 
         for (Rectangle obstacle : obstacles) {
             if (!rangesOverlap(bounds.x, bounds.x + bounds.width, obstacle.x, obstacle.x + obstacle.width)) {
@@ -53,7 +71,7 @@ public final class CollisionResolver {
             }
         }
 
-        hero.setPosition(hero.getX(), targetY);
+        bounds.y = targetY - halfHeight;
     }
 
     private static boolean rangesOverlap(float firstMin, float firstMax, float secondMin, float secondMax) {

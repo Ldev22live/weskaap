@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.weskaap.game.enemy.PrototypeEnemy;
 import com.weskaap.game.player.Hero;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class CombatController {
     private Combatant lastHit;
     private int hitCount;
 
-    public boolean update(float delta, Hero hero, List<? extends Combatant> combatants) {
+    public boolean update(float delta, Hero hero, List<PrototypeEnemy> combatants) {
         cooldownRemaining = Math.max(0f, cooldownRemaining - delta);
         attackDisplayTimer = Math.max(0f, attackDisplayTimer - delta);
         if (!Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || cooldownRemaining > 0f) {

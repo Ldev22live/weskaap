@@ -80,6 +80,10 @@ public class MainGameScreen implements Screen {
         if (combatMessage != null) {
             font.draw(spriteBatch, combatMessage, 20f, uiCamera.viewportHeight - 40f);
         }
+        String aiStateMessage = world.getAiStateMessage();
+        if (aiStateMessage != null) {
+            font.draw(spriteBatch, aiStateMessage, 20f, uiCamera.viewportHeight - 60f);
+        }
         if (world.hasCurrentInteractable()) {
             font.draw(spriteBatch, "[E] Interact", 20f, 30f);
         }

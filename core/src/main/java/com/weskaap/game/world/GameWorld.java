@@ -13,6 +13,8 @@ import com.weskaap.game.interaction.PrototypeNpc;
 import com.weskaap.game.player.Hero;
 import com.weskaap.game.player.HeroController;
 
+import com.weskaap.game.enemy.EnemyAiController;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -41,11 +43,13 @@ public class GameWorld {
 	private final List<Rectangle> collisionBounds;
 	private final List<Interactable> interactables;
 	private final List<PrototypeEnemy> enemies;
+	private final List<EnemyAiController> enemyAiControllers;
 	private Interactable currentInteractable;
 	private String interactionMessage;
 	private float interactionMessageTimer;
 	private String combatMessage;
 	private float combatMessageTimer;
+	private String aiStateMessage;
 
 	public GameWorld() {
 		shapeRenderer = new ShapeRenderer();
@@ -56,6 +60,7 @@ public class GameWorld {
 		obstacles = createObstacles();
 		interactables = createInteractables();
 		enemies = createEnemies();
+		enemyAiControllers = createEnemyAiControllers();
 		collisionBounds = createCollisionBounds();
 	}
 
@@ -75,6 +80,10 @@ public class GameWorld {
 		return combatMessage;
 	}
 
+	public String getAiStateMessage() {
+		return aiStateMessage;
+	}
+
 	public boolean hasCurrentInteractable() {
 		return currentInteractable != null;
 	}
@@ -84,6 +93,7 @@ public class GameWorld {
 		updateCombatMessage(delta);
 		Vector2 movement = heroController.getMovement(hero, delta);
 		CollisionResolver.move(hero, movement.x, movement.y, collisionBounds, WIDTH, HEIGHT);
+		updateEnemyAi(delta);
 		currentInteractable = findNearestInteractable();
 		if (currentInteractable != null && interactionController.isInteractionRequested()) {
 			interactionMessage = currentInteractable.interact();
@@ -154,8 +164,17 @@ public class GameWorld {
 
 	private List<PrototypeEnemy> createEnemies() {
 		List<PrototypeEnemy> worldEnemies = new ArrayList<>();
-		worldEnemies.add(new PrototypeEnemy(1500f, 1200f, 100));
+		worldEnemies.add(new PrototypeEnemy(900f, 1000f, 100, EnemyAiController.ENEMY_SPEED));
+		worldEnemies.add(new PrototypeEnemy(2500f, 1800f, 100, EnemyAiController.ENEMY_SPEED));
 		return worldEnemies;
+	}
+
+	private List<EnemyAiController> createEnemyAiControllers() {
+		List<EnemyAiController> controllers = new ArrayList<>();
+		for (PrototypeEnemy enemy : enemies) {
+			controllers.add(new EnemyAiController(enemy));
+		}
+		return controllers;
 	}
 
 	private List<Rectangle> createCollisionBounds() {
@@ -210,6 +229,22 @@ public class GameWorld {
 		if (combatMessageTimer == 0f) {
 			combatMessage = null;
 		}
+	}
+
+	private void updateEnemyAi(float delta) {
+		StringBuilder builder = new StringBuilder();
+		List<Rectangle> otherCollisionBounds = new ArrayList<>(collisionBounds);
+		for (EnemyAiController controller : enemyAiControllers) {
+			otherCollisionBounds.remove(controller.getEnemy().getCombatBounds());
+			controller.update(delta, hero, otherCollisionBounds, WIDTH, HEIGHT);
+			otherCollisionBounds.add(controller.getEnemy().getCombatBounds());
+			if (builder.length() > 0) {
+				builder.append(" | ");
+			}
+			builder.append("Enemy: ").append(controller.getState())
+				.append(" (").append(Math.round(controller.getDistanceToHero(hero))).append(")");
+		}
+		aiStateMessage = builder.length() > 0 ? builder.toString() : null;
 	}
 
 	private void removeDeadEnemies() {

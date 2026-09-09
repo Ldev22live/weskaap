@@ -12,7 +12,7 @@ public class PrototypeEnemy implements Combatant {
     private final int maximumHealth;
     private int health;
 
-    public PrototypeEnemy(float x, float y, int maximumHealth) {
+    public PrototypeEnemy(float x, float y, int maximumHealth, float speed) {
         position = new Vector2(x, y);
         bounds = new Rectangle(x - SIZE / 2f, y - SIZE / 2f, SIZE, SIZE);
         this.maximumHealth = maximumHealth;
@@ -43,5 +43,10 @@ public class PrototypeEnemy implements Combatant {
         if (amount > 0 && isAlive()) {
             health = Math.max(0, health - amount);
         }
+    }
+
+    public void setPosition(float x, float y) {
+        position.set(x, y);
+        bounds.set(x - SIZE / 2f, y - SIZE / 2f, SIZE, SIZE);
     }
 }
