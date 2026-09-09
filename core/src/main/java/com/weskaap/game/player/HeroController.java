@@ -2,19 +2,18 @@ package com.weskaap.game.player;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.math.Vector2;
 
 public class HeroController {
-    public void update(Hero hero, float delta) {
-        float horizontal = getHorizontalInput();
-        float vertical = getVerticalInput();
+    private final Vector2 movement = new Vector2();
 
-        if (horizontal == 0f && vertical == 0f) {
-            return;
+    public Vector2 getMovement(Hero hero, float delta) {
+        movement.set(getHorizontalInput(), getVerticalInput());
+        if (!movement.isZero()) {
+            hero.setFacingDirection(movement.x, movement.y);
+            movement.nor().scl(hero.getMovementSpeed() * delta);
         }
-
-        float length = (float) Math.sqrt(horizontal * horizontal + vertical * vertical);
-        float distance = hero.getMovementSpeed() * delta;
-        hero.moveBy(horizontal / length * distance, vertical / length * distance);
+        return movement;
     }
 
     private float getHorizontalInput() {
