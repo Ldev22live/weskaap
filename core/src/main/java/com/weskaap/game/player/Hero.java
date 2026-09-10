@@ -2,22 +2,29 @@ package com.weskaap.game.player;
 
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.weskaap.game.combat.Combatant;
+import com.weskaap.game.inventory.Inventory;
 
-public class Hero {
+public class Hero implements Combatant {
     public static final float SIZE = 32f;
     public static final float COLLISION_WIDTH = 28f;
     public static final float COLLISION_HEIGHT = 28f;
+    public static final int MAXIMUM_HEALTH = 100;
 
     private final Vector2 position;
     private final Vector2 facingDirection;
     private final Rectangle collisionBounds;
     private final float movementSpeed;
+    private final Inventory inventory;
+    private int health;
 
     public Hero(float x, float y, float movementSpeed) {
         position = new Vector2(x, y);
         facingDirection = new Vector2(0f, -1f);
         collisionBounds = new Rectangle();
         this.movementSpeed = movementSpeed;
+        inventory = new Inventory();
+        health = MAXIMUM_HEALTH;
         updateCollisionBounds();
     }
 
@@ -37,6 +44,23 @@ public class Hero {
         return movementSpeed;
     }
 
+    @Override
+    public int getHealth() {
+        return health;
+    }
+
+    @Override
+    public int getMaximumHealth() {
+        return MAXIMUM_HEALTH;
+    }
+
+    @Override
+    public void takeDamage(int amount) {
+        if (amount > 0 && isAlive()) {
+            health = Math.max(0, health - amount);
+        }
+    }
+
     public Vector2 getFacingDirection() {
         return facingDirection;
     }
@@ -49,8 +73,17 @@ public class Hero {
         }
     }
 
+    @Override
+    public Rectangle getCombatBounds() {
+        return collisionBounds;
+    }
+
     public Rectangle getCollisionBounds() {
         return collisionBounds;
+    }
+
+    public Inventory getInventory() {
+        return inventory;
     }
 
     public void moveBy(float xAmount, float yAmount) {

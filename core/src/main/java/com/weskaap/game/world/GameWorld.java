@@ -6,14 +6,17 @@ import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.weskaap.game.combat.CombatController;
 import com.weskaap.game.combat.Combatant;
+import com.weskaap.game.enemy.EnemyAiController;
 import com.weskaap.game.enemy.PrototypeEnemy;
 import com.weskaap.game.interaction.Interactable;
 import com.weskaap.game.interaction.InteractionController;
 import com.weskaap.game.interaction.PrototypeNpc;
+import com.weskaap.game.inventory.InventoryController;
+import com.weskaap.game.item.Item;
+import com.weskaap.game.item.ItemType;
+import com.weskaap.game.item.PrototypeItem;
 import com.weskaap.game.player.Hero;
 import com.weskaap.game.player.HeroController;
-
-import com.weskaap.game.enemy.EnemyAiController;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -30,6 +33,7 @@ public class GameWorld {
 	private static final Color HERO_COLOR = new Color(0.9f, 0.68f, 0.2f, 1f);
 	private static final Color NPC_COLOR = new Color(0.2f, 0.55f, 0.9f, 1f);
 	private static final Color ENEMY_COLOR = new Color(0.75f, 0.18f, 0.16f, 1f);
+	private static final Color ITEM_COLOR = new Color(0.2f, 0.9f, 0.4f, 1f);
 	private static final Color ATTACK_COLOR = new Color(1f, 0.75f, 0.2f, 1f);
 	private static final Color OBSTACLE_COLOR = new Color(0.32f, 0.29f, 0.25f, 1f);
 	private static final Color GRID_COLOR = new Color(0.22f, 0.32f, 0.23f, 1f);
@@ -38,10 +42,12 @@ public class GameWorld {
 	private final Hero hero;
 	private final HeroController heroController;
 	private final InteractionController interactionController;
+	private final InventoryController inventoryController;
 	private final CombatController combatController;
 	private final List<Rectangle> obstacles;
 	private final List<Rectangle> collisionBounds;
 	private final List<Interactable> interactables;
+	private final List<PrototypeItem> worldItems;
 	private final List<PrototypeEnemy> enemies;
 	private final List<EnemyAiController> enemyAiControllers;
 	private Interactable currentInteractable;
@@ -50,14 +56,17 @@ public class GameWorld {
 	private String combatMessage;
 	private float combatMessageTimer;
 	private String aiStateMessage;
+	private boolean inventoryVisible;
 
 	public GameWorld() {
 		shapeRenderer = new ShapeRenderer();
 		hero = new Hero(WIDTH / 2f, HEIGHT / 2f, 240f);
 		heroController = new HeroController();
 		interactionController = new InteractionController();
+		inventoryController = new InventoryController();
 		combatController = new CombatController();
 		obstacles = createObstacles();
+		worldItems = createWorldItems();
 		interactables = createInteractables();
 		enemies = createEnemies();
 		enemyAiControllers = createEnemyAiControllers();
@@ -84,22 +93,52 @@ public class GameWorld {
 		return aiStateMessage;
 	}
 
+	public String getHeroStatusMessage() {
+		return "Hero HP: " + hero.getHealth() + " / " + hero.getMaximumHealth();
+	}
+
 	public boolean hasCurrentInteractable() {
 		return currentInteractable != null;
+	}
+
+	public boolean isInventoryVisible() {
+		return inventoryVisible;
+	}
+
+	public List<PrototypeItem> getWorldItems() {
+		return worldItems;
+	}
+
+	public String getInventoryText() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("Inventory: ").append(hero.getInventory().size()).append(" / ")
+			.append(hero.getInventory().getCapacity());
+		for (Item item : hero.getInventory().getItems()) {
+			builder.append("\n- ").append(item.toString());
+		}
+		return builder.toString();
 	}
 
 	public void update(float delta) {
 		updateInteractionMessage(delta);
 		updateCombatMessage(delta);
+		if (inventoryController.isToggleRequested()) {
+			inventoryVisible = !inventoryVisible;
+		}
 		Vector2 movement = heroController.getMovement(hero, delta);
-		CollisionResolver.move(hero, movement.x, movement.y, collisionBounds, WIDTH, HEIGHT);
+		if (hero.isAlive()) {
+			CollisionResolver.move(hero, movement.x, movement.y, collisionBounds, WIDTH, HEIGHT);
+		}
 		updateEnemyAi(delta);
 		currentInteractable = findNearestInteractable();
-		if (currentInteractable != null && interactionController.isInteractionRequested()) {
+		if (hero.isAlive() && currentInteractable != null && interactionController.isInteractionRequested()) {
 			interactionMessage = currentInteractable.interact();
 			interactionMessageTimer = MESSAGE_DURATION;
+			if (currentInteractable instanceof PrototypeItem) {
+				collectItem((PrototypeItem) currentInteractable);
+			}
 		}
-		if (combatController.update(delta, hero, enemies) && combatController.getHitCount() > 0) {
+		if (hero.isAlive() && combatController.update(delta, hero, enemies) && combatController.getHitCount() > 0) {
 			updateCombatFeedback(combatController.getLastHit());
 			removeDeadEnemies();
 		}
@@ -115,7 +154,15 @@ public class GameWorld {
 		}
 		shapeRenderer.setColor(NPC_COLOR);
 		for (Interactable interactable : interactables) {
+			if (interactable instanceof PrototypeItem) {
+				continue;
+			}
 			Rectangle bounds = interactable.getBounds();
+			shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
+		}
+		shapeRenderer.setColor(ITEM_COLOR);
+		for (PrototypeItem item : worldItems) {
+			Rectangle bounds = item.getBounds();
 			shapeRenderer.rect(bounds.x, bounds.y, bounds.width, bounds.height);
 		}
 		shapeRenderer.setColor(ENEMY_COLOR);
@@ -159,7 +206,22 @@ public class GameWorld {
 	private List<Interactable> createInteractables() {
 		List<Interactable> worldInteractables = new ArrayList<>();
 		worldInteractables.add(new PrototypeNpc(1700f, 1320f, "Hello, Hero!"));
+		worldInteractables.addAll(worldItems);
 		return worldInteractables;
+	}
+
+	private List<PrototypeItem> createWorldItems() {
+		List<PrototypeItem> items = new ArrayList<>();
+		items.add(new PrototypeItem(1400f, 1180f,
+			new Item("basic-sword", "Basic Sword", "A simple starter blade.", ItemType.WEAPON)));
+		items.add(new PrototypeItem(1900f, 1500f,
+			new Item("healing-potion", "Healing Potion", "A simple restorative tonic.",
+				ItemType.CONSUMABLE, true, 20, 3)));
+		items.add(new PrototypeItem(1600f, 900f,
+			new Item("leather-armour", "Leather Armour", "Basic protective gear.", ItemType.ARMOUR)));
+		items.add(new PrototypeItem(2100f, 1600f,
+			new Item("quest-relic", "Quest Relic", "An old relic for an important quest.", ItemType.QUEST)));
+		return items;
 	}
 
 	private List<PrototypeEnemy> createEnemies() {
@@ -186,6 +248,20 @@ public class GameWorld {
 			worldCollisionBounds.add(enemy.getCombatBounds());
 		}
 		return worldCollisionBounds;
+	}
+
+	private void collectItem(PrototypeItem prototypeItem) {
+		if (hero.getInventory().add(prototypeItem.getItem())) {
+			worldItems.remove(prototypeItem);
+			interactables.remove(prototypeItem);
+			collisionBounds.remove(prototypeItem.getBounds());
+			if (currentInteractable == prototypeItem) {
+				currentInteractable = null;
+			}
+		} else {
+			interactionMessage = "Inventory full!";
+			interactionMessageTimer = MESSAGE_DURATION;
+		}
 	}
 
 	private Interactable findNearestInteractable() {
@@ -233,18 +309,35 @@ public class GameWorld {
 
 	private void updateEnemyAi(float delta) {
 		StringBuilder builder = new StringBuilder();
+		boolean heroWasAlive = hero.isAlive();
 		List<Rectangle> otherCollisionBounds = new ArrayList<>(collisionBounds);
 		for (EnemyAiController controller : enemyAiControllers) {
 			otherCollisionBounds.remove(controller.getEnemy().getCombatBounds());
 			controller.update(delta, hero, otherCollisionBounds, WIDTH, HEIGHT);
 			otherCollisionBounds.add(controller.getEnemy().getCombatBounds());
+			if (controller.getLastAttackDamage() > 0) {
+				updateHeroDamageFeedback(controller.getLastAttackDamage());
+			}
 			if (builder.length() > 0) {
 				builder.append(" | ");
 			}
 			builder.append("Enemy: ").append(controller.getState())
 				.append(" (").append(Math.round(controller.getDistanceToHero(hero))).append(")");
 		}
+		if (heroWasAlive && !hero.isAlive()) {
+			combatMessage = "Hero defeated!";
+			combatMessageTimer = COMBAT_MESSAGE_DURATION;
+		}
 		aiStateMessage = builder.length() > 0 ? builder.toString() : null;
+	}
+
+	private void updateHeroDamageFeedback(int damage) {
+		if (hero.isAlive()) {
+			combatMessage = "Enemy attacks! Hero HP: " + hero.getHealth() + " / " + hero.getMaximumHealth();
+		} else {
+			combatMessage = "Enemy attacks! Hero defeated!";
+		}
+		combatMessageTimer = COMBAT_MESSAGE_DURATION;
 	}
 
 	private void removeDeadEnemies() {

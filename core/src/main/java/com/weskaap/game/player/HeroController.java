@@ -8,6 +8,9 @@ public class HeroController {
     private final Vector2 movement = new Vector2();
 
     public Vector2 getMovement(Hero hero, float delta) {
+        if (!hero.isAlive()) {
+            return movement.set(0f, 0f);
+        }
         movement.set(getHorizontalInput(), getVerticalInput());
         if (!movement.isZero()) {
             hero.setFacingDirection(movement.x, movement.y);

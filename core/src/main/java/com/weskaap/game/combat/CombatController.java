@@ -26,7 +26,7 @@ public class CombatController {
     public boolean update(float delta, Hero hero, List<PrototypeEnemy> combatants) {
         cooldownRemaining = Math.max(0f, cooldownRemaining - delta);
         attackDisplayTimer = Math.max(0f, attackDisplayTimer - delta);
-        if (!Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || cooldownRemaining > 0f) {
+        if (!hero.isAlive() || !Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || cooldownRemaining > 0f) {
             return false;
         }
 
