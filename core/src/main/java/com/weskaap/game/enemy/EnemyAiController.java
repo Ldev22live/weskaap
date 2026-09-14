@@ -63,8 +63,9 @@ public class EnemyAiController {
         }
 
         if (distance <= ATTACK_RANGE && attackCooldownRemaining <= 0f) {
-            hero.takeDamage(ATTACK_DAMAGE);
-            lastAttackDamage = ATTACK_DAMAGE;
+            int damage = Math.max(1, ATTACK_DAMAGE - hero.getTotalArmour());
+            hero.takeDamage(damage);
+            lastAttackDamage = damage;
             attackCooldownRemaining = ATTACK_COOLDOWN;
         }
     }

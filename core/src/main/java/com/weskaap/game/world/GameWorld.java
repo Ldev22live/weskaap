@@ -11,11 +11,17 @@ import com.weskaap.game.enemy.PrototypeEnemy;
 import com.weskaap.game.interaction.Interactable;
 import com.weskaap.game.interaction.InteractionController;
 import com.weskaap.game.interaction.PrototypeNpc;
+import com.weskaap.game.equipment.EquipmentSlot;
 import com.weskaap.game.inventory.InventoryController;
 import com.weskaap.game.item.Item;
+import com.weskaap.game.item.ItemStats;
 import com.weskaap.game.item.ItemType;
 import com.weskaap.game.item.PrototypeItem;
+import com.weskaap.game.loot.LootGenerator;
+import com.weskaap.game.loot.LootTable;
 import com.weskaap.game.player.Hero;
+import com.weskaap.game.consumable.ConsumableController;
+import com.weskaap.game.consumable.ItemUseResult;
 import com.weskaap.game.player.HeroController;
 
 import java.util.ArrayList;
@@ -44,6 +50,8 @@ public class GameWorld {
 	private final InteractionController interactionController;
 	private final InventoryController inventoryController;
 	private final CombatController combatController;
+	private final LootGenerator lootGenerator;
+	private final ConsumableController consumableController;
 	private final List<Rectangle> obstacles;
 	private final List<Rectangle> collisionBounds;
 	private final List<Interactable> interactables;
@@ -61,10 +69,13 @@ public class GameWorld {
 	public GameWorld() {
 		shapeRenderer = new ShapeRenderer();
 		hero = new Hero(WIDTH / 2f, HEIGHT / 2f, 240f);
+		setupStartingEquipment();
 		heroController = new HeroController();
 		interactionController = new InteractionController();
 		inventoryController = new InventoryController();
 		combatController = new CombatController();
+		lootGenerator = new LootGenerator();
+		consumableController = new ConsumableController();
 		obstacles = createObstacles();
 		worldItems = createWorldItems();
 		interactables = createInteractables();
@@ -113,6 +124,14 @@ public class GameWorld {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Inventory: ").append(hero.getInventory().size()).append(" / ")
 			.append(hero.getInventory().getCapacity());
+		builder.append("\nEquipped:");
+		for (EquipmentSlot slot : EquipmentSlot.values()) {
+			Item equipped = hero.getEquipment().getEquipped(slot);
+			builder.append("\n- ").append(slot).append(": ")
+				.append(equipped != null ? equipped.getName() : "none");
+		}
+		builder.append("\nStats: ATK ").append(hero.getTotalAttack())
+			.append(" | ARM ").append(hero.getTotalArmour());
 		for (Item item : hero.getInventory().getItems()) {
 			builder.append("\n- ").append(item.toString());
 		}
@@ -141,6 +160,10 @@ public class GameWorld {
 		if (hero.isAlive() && combatController.update(delta, hero, enemies) && combatController.getHitCount() > 0) {
 			updateCombatFeedback(combatController.getLastHit());
 			removeDeadEnemies();
+		}
+		ItemUseResult consumableResult = consumableController.update(hero, hero.getInventory());
+		if (consumableResult != null) {
+			updateConsumableFeedback(consumableResult);
 		}
 	}
 
@@ -210,15 +233,22 @@ public class GameWorld {
 		return worldInteractables;
 	}
 
+	private void setupStartingEquipment() {
+		Item basicSword = new Item("basic-sword", "Basic Sword", "A simple starter blade.",
+			ItemType.WEAPON, false, 1, 1, new ItemStats(5, 0, 0, 0, 0f));
+		Item leatherArmour = new Item("leather-armour", "Leather Armour", "Basic protective gear.",
+			ItemType.ARMOUR, false, 1, 1, new ItemStats(0, 3, 0, 0, 0f));
+		hero.getInventory().add(basicSword);
+		hero.getInventory().add(leatherArmour);
+		hero.getEquipment().equip(hero.getInventory(), basicSword);
+		hero.getEquipment().equip(hero.getInventory(), leatherArmour);
+	}
+
 	private List<PrototypeItem> createWorldItems() {
 		List<PrototypeItem> items = new ArrayList<>();
-		items.add(new PrototypeItem(1400f, 1180f,
-			new Item("basic-sword", "Basic Sword", "A simple starter blade.", ItemType.WEAPON)));
 		items.add(new PrototypeItem(1900f, 1500f,
 			new Item("healing-potion", "Healing Potion", "A simple restorative tonic.",
 				ItemType.CONSUMABLE, true, 20, 3)));
-		items.add(new PrototypeItem(1600f, 900f,
-			new Item("leather-armour", "Leather Armour", "Basic protective gear.", ItemType.ARMOUR)));
 		items.add(new PrototypeItem(2100f, 1600f,
 			new Item("quest-relic", "Quest Relic", "An old relic for an important quest.", ItemType.QUEST)));
 		return items;
@@ -226,9 +256,26 @@ public class GameWorld {
 
 	private List<PrototypeEnemy> createEnemies() {
 		List<PrototypeEnemy> worldEnemies = new ArrayList<>();
-		worldEnemies.add(new PrototypeEnemy(900f, 1000f, 100, EnemyAiController.ENEMY_SPEED));
-		worldEnemies.add(new PrototypeEnemy(2500f, 1800f, 100, EnemyAiController.ENEMY_SPEED));
+		LootTable basicLoot = createBasicLootTable();
+		PrototypeEnemy firstEnemy = new PrototypeEnemy(900f, 1000f, 100, EnemyAiController.ENEMY_SPEED);
+		firstEnemy.setLootTable(basicLoot);
+		PrototypeEnemy secondEnemy = new PrototypeEnemy(2500f, 1800f, 100, EnemyAiController.ENEMY_SPEED);
+		secondEnemy.setLootTable(basicLoot);
+		worldEnemies.add(firstEnemy);
+		worldEnemies.add(secondEnemy);
 		return worldEnemies;
+	}
+
+	private LootTable createBasicLootTable() {
+		LootTable table = new LootTable(2);
+		table.add(new Item("healing-potion", "Healing Potion", "A simple restorative tonic.",
+			ItemType.CONSUMABLE, true, 20, 1), 0.5f);
+		table.add(new Item("basic-sword", "Basic Sword", "A simple starter blade.",
+			ItemType.WEAPON, false, 1, 1, new ItemStats(5, 0, 0, 0, 0f)), 0.1f);
+		table.add(new Item("leather-armour", "Leather Armour", "Basic protective gear.",
+			ItemType.ARMOUR, false, 1, 1, new ItemStats(0, 3, 0, 0, 0f)), 0.1f);
+		table.add(new Item("quest-relic", "Quest Relic", "An old relic for an important quest.", ItemType.QUEST), 0.05f);
+		return table;
 	}
 
 	private List<EnemyAiController> createEnemyAiControllers() {
@@ -288,11 +335,12 @@ public class GameWorld {
 	}
 
 	private void updateCombatFeedback(Combatant combatant) {
+		int attackDamage = CombatController.BASIC_ATTACK_DAMAGE + hero.getTotalAttack();
 		if (combatant.isAlive()) {
-			combatMessage = "Damage: " + CombatController.BASIC_ATTACK_DAMAGE + " | Enemy HP: "
+			combatMessage = "Damage: " + attackDamage + " | Enemy HP: "
 				+ combatant.getHealth() + " / " + combatant.getMaximumHealth();
 		} else {
-			combatMessage = "Damage: " + CombatController.BASIC_ATTACK_DAMAGE + " | Enemy defeated!";
+			combatMessage = "Damage: " + attackDamage + " | Enemy defeated!";
 		}
 		combatMessageTimer = COMBAT_MESSAGE_DURATION;
 	}
@@ -340,14 +388,69 @@ public class GameWorld {
 		combatMessageTimer = COMBAT_MESSAGE_DURATION;
 	}
 
+	private void updateConsumableFeedback(ItemUseResult result) {
+		switch (result) {
+			case SUCCESS:
+				interactionMessage = "Used Healing Potion. +" + ConsumableController.HEALING_POTION_AMOUNT + " HP";
+				break;
+			case ALREADY_FULL_HEALTH:
+				interactionMessage = "Health is already full.";
+				break;
+			case HERO_DEAD:
+				interactionMessage = "Cannot use items while dead.";
+				break;
+			case ITEM_NOT_FOUND:
+				interactionMessage = "No Healing Potion in inventory.";
+				break;
+			case NOT_CONSUMABLE:
+				interactionMessage = "Item is not consumable.";
+				break;
+			case INVALID_ITEM:
+				interactionMessage = "Invalid item.";
+				break;
+			case CANNOT_APPLY:
+				interactionMessage = "Cannot use item right now.";
+				break;
+		}
+		interactionMessageTimer = MESSAGE_DURATION;
+	}
+
 	private void removeDeadEnemies() {
 		Iterator<PrototypeEnemy> iterator = enemies.iterator();
 		while (iterator.hasNext()) {
 			PrototypeEnemy enemy = iterator.next();
 			if (!enemy.isAlive()) {
+				if (!enemy.hasDroppedLoot() && enemy.getLootTable() != null) {
+					dropLoot(enemy);
+				}
 				collisionBounds.remove(enemy.getCombatBounds());
 				iterator.remove();
 			}
+		}
+	}
+
+	private void dropLoot(PrototypeEnemy enemy) {
+		List<Item> drops = lootGenerator.generate(enemy.getLootTable());
+		enemy.markLootDropped();
+		if (drops.isEmpty()) {
+			combatMessage = "Enemy defeated!";
+			combatMessageTimer = COMBAT_MESSAGE_DURATION;
+			return;
+		}
+
+		combatMessage = "Enemy defeated! Loot dropped!";
+		combatMessageTimer = COMBAT_MESSAGE_DURATION;
+		float x = enemy.getPosition().x;
+		float y = enemy.getPosition().y;
+		float spacing = PrototypeItem.SIZE + 10f;
+		for (int i = 0; i < drops.size(); i++) {
+			float offsetX = (i - (drops.size() - 1) / 2f) * spacing;
+			float dropX = Math.max(PrototypeItem.SIZE / 2f, Math.min(WIDTH - PrototypeItem.SIZE / 2f, x + offsetX));
+			float dropY = Math.max(PrototypeItem.SIZE / 2f, Math.min(HEIGHT - PrototypeItem.SIZE / 2f, y + 20f));
+			PrototypeItem prototypeItem = new PrototypeItem(dropX, dropY, drops.get(i).copy());
+			worldItems.add(prototypeItem);
+			interactables.add(prototypeItem);
+			collisionBounds.add(prototypeItem.getBounds());
 		}
 	}
 

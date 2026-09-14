@@ -10,13 +10,18 @@ public final class Item {
     private final ItemType type;
     private final boolean stackable;
     private final int maxStackSize;
+    private final ItemStats stats;
     private int quantity;
 
     public Item(String id, String name, String description, ItemType type) {
-        this(id, name, description, type, false, DEFAULT_MAX_STACK, DEFAULT_QUANTITY);
+        this(id, name, description, type, false, DEFAULT_MAX_STACK, DEFAULT_QUANTITY, new ItemStats());
     }
 
     public Item(String id, String name, String description, ItemType type, boolean stackable, int maxStackSize, int quantity) {
+        this(id, name, description, type, stackable, maxStackSize, quantity, new ItemStats());
+    }
+
+    public Item(String id, String name, String description, ItemType type, boolean stackable, int maxStackSize, int quantity, ItemStats stats) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Item id must not be blank");
         }
@@ -45,6 +50,7 @@ public final class Item {
         this.stackable = stackable;
         this.maxStackSize = maxStackSize;
         this.quantity = quantity;
+        this.stats = stats != null ? stats : new ItemStats();
     }
 
     public String getId() {
@@ -65,6 +71,10 @@ public final class Item {
 
     public boolean isStackable() {
         return stackable;
+    }
+
+    public ItemStats getStats() {
+        return stats;
     }
 
     public int getMaxStackSize() {
@@ -111,11 +121,11 @@ public final class Item {
     }
 
     public Item withQuantity(int newQuantity) {
-        return new Item(id, name, description, type, stackable, maxStackSize, newQuantity);
+        return new Item(id, name, description, type, stackable, maxStackSize, newQuantity, stats);
     }
 
     public Item copy() {
-        return new Item(id, name, description, type, stackable, maxStackSize, quantity);
+        return new Item(id, name, description, type, stackable, maxStackSize, quantity, stats);
     }
 
     @Override

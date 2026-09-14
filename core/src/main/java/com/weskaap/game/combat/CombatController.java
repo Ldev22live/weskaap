@@ -35,9 +35,10 @@ public class CombatController {
         lastHit = null;
         hitCount = 0;
         updateAttackBounds(hero);
+        int attackDamage = BASIC_ATTACK_DAMAGE + hero.getTotalAttack();
         for (Combatant combatant : combatants) {
             if (combatant.isAlive() && attackBounds.overlaps(combatant.getCombatBounds())) {
-                combatant.takeDamage(BASIC_ATTACK_DAMAGE);
+                combatant.takeDamage(attackDamage);
                 lastHit = combatant;
                 hitCount++;
             }
@@ -59,6 +60,10 @@ public class CombatController {
 
     public int getHitCount() {
         return hitCount;
+    }
+
+    public int getLastAttackDamage() {
+        return lastHit != null ? BASIC_ATTACK_DAMAGE : 0;
     }
 
     private void updateAttackBounds(Hero hero) {

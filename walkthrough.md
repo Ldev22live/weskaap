@@ -2,7 +2,7 @@
 
 ## Overview
 
-This prototype covers milestones M1 through M8. It demonstrates a lightweight LibGDX desktop game with keyboard-controlled Hero movement, a simple world, camera following, static obstacle collision, interaction, basic combat, enemy pursuit AI, Hero health/damage/death, and a reusable item/inventory foundation. All visuals are primitive shapes; no external assets are used.
+This prototype covers milestones M1 through M11. It demonstrates a lightweight LibGDX desktop game with keyboard-controlled Hero movement, a simple world, camera following, static obstacle collision, interaction, basic combat, enemy pursuit AI, Hero health/damage/death, an item/inventory/equipment foundation with item statistics, a lightweight loot/enemy-drops foundation, and a consumables/healing foundation. All visuals are primitive shapes; no external assets are used.
 
 ## Controls
 
@@ -14,12 +14,13 @@ This prototype covers milestones M1 through M8. It demonstrates a lightweight Li
 - `E`: interact with a nearby NPC or item
 - `Space`: basic attack in the direction the Hero is facing
 - `I`: toggle inventory display
+- `H`: use a Healing Potion from inventory
 
 ## Architecture
 
 ### Hero
 
-`Hero` owns its center position, movement speed, visual size, collision boundary, facing direction, health, and an `Inventory`. It implements the `Combatant` abstraction so it can take damage and become dead. The facing direction is updated from the most recent non-zero movement input and is used by the combat system to place the attack area in front of the Hero.
+`Hero` owns its center position, base movement speed, visual size, collision boundary, facing direction, health, an `Inventory`, and `Equipment`. It implements the `Combatant` abstraction so it can take damage and become dead. Calculated stats (attack, armour, max health, movement speed) combine base values with equipment item statistics. The facing direction is updated from the most recent non-zero movement input and is used by the combat system to place the attack area in front of the Hero.
 
 ### HeroController
 
@@ -31,7 +32,7 @@ This prototype covers milestones M1 through M8. It demonstrates a lightweight Li
 
 ### GameWorld
 
-`GameWorld` owns the Hero, controller, obstacle list, NPC, enemies, enemy AI controllers, and all primitive rendering. It coordinates the update order: movement, enemy AI (which may include enemy attacks), interaction, combat, death handling, and message timers.
+`GameWorld` owns the Hero, controller, obstacle list, NPC, enemies, enemy AI controllers, loot generator, consumable controller, and all primitive rendering. It coordinates the update order: movement, enemy AI (which may include enemy attacks), interaction, combat, death handling, loot generation, consumable use, and message timers.
 
 ### MainGameScreen
 
@@ -49,8 +50,9 @@ This prototype covers milestones M1 through M8. It demonstrates a lightweight Li
 ### Combat System
 
 - `Combatant` defines health, maximum health, taking damage, and alive state.
-- `PrototypeEnemy` implements `Combatant` and owns position, bounds, and health.
+- `PrototypeEnemy` implements `Combatant` and owns position, bounds, health, and an optional `LootTable`.
 - `CombatController` handles the Space key, attack cooldown, directional hit area, target detection, and damage application.
+- When an enemy dies, `GameWorld` generates loot from the enemy's loot table once, spawns the resulting items as `PrototypeItem` instances near the enemy, and registers them in the world's interactable and collision collections.
 - Dead enemies are removed from the world.
 
 ### Enemy AI System
@@ -60,15 +62,25 @@ This prototype covers milestones M1 through M8. It demonstrates a lightweight Li
 - Enemies will not chase or attack a dead Hero.
 - Dead enemies do not run AI and are cleaned up by the combat system.
 
-### Item and Inventory System
+### Item, Inventory, and Equipment System
 
 - `ItemType` is an enum with `WEAPON`, `ARMOUR`, `CONSUMABLE`, `QUEST`, and `MISC`.
-- `Item` is a data-only class with an id, name, description, type, stackable flag, max stack size, and quantity.
+- `Item` is a data-only class with an id, name, description, type, stackable flag, max stack size, quantity, and optional `ItemStats`.
+- `ItemStats` holds optional gameplay statistics: damage, armour, health bonus, attack bonus, and movement modifier.
 - `Inventory` manages items with a configurable capacity. It supports add, remove by id/quantity, `has`, `count`, `get`, `getItems`, `isFull`, `isEmpty`, `clear`, and `size`.
 - Stackable items are consolidated into a single slot up to their max stack size. New stacks are created only when needed.
-- `Inventory.add` returns `false` when an item cannot be added, ensuring items are not silently lost.
+- `Inventory.add` and `Inventory.remove` return `false` when an operation cannot be completed atomically, ensuring items are not silently lost or partially mutated.
+- `EquipmentSlot` defines `WEAPON` and `ARMOUR` slots, mapped from `ItemType`.
+- `Equipment` owns the currently equipped items and supports atomic equip/unequip operations that interact with the inventory.
 - `PrototypeItem` represents a collectible world item. It implements `Interactable`, so it uses the existing interaction system.
-- `GameWorld` creates world items, handles collection, and removes collected items from the world and collision bounds. If the inventory is full, the item stays in the world and a `Inventory full!` message is shown.
+- `LootDrop` pairs an item template with a drop chance.
+- `LootTable` defines a list of possible drops and a maximum number of drops per generation.
+- `LootGenerator` uses a shared `Random` instance to evaluate a `LootTable` and return independent item instances.
+- `GameWorld` creates world items, handles collection, and removes collected items from the world and collision bounds. The Hero starts with a `Basic Sword` and `Leather Armour` equipped.
+- Enemies have a basic loot table with a chance to drop Healing Potions, equipment, and quest relics (up to two items per enemy).
+- `ConsumableController` maps consumable item IDs to `ConsumableEffect` implementations. It handles `H` key input to use a Healing Potion, applies the effect, decrements the stack by one, and rolls back the inventory change if the effect cannot be applied.
+- `HealingEffect` restores a fixed amount of HP, clamped to the Hero's calculated maximum health. It cannot be used while dead or at full health.
+- If the inventory is full, a collected item stays in the world and an `Inventory full!` message is shown.
 
 ## Prototype Visuals
 
@@ -106,15 +118,30 @@ This prototype covers milestones M1 through M8. It demonstrates a lightweight Li
 21. Confirm stackable items (e.g. Healing Potion) merge into a single slot with quantity shown.
 22. Confirm a full inventory prevents pickup and shows `Inventory full!`.
 23. Confirm a dead Hero cannot collect items.
-24. Confirm no runtime exceptions occur.
+24. Confirm the inventory display lists equipped `Basic Sword` and `Leather Armour`.
+25. Confirm the stats line shows the weapon damage and armour contributions.
+26. Confirm enemy melee damage is reduced by the equipped armour.
+27. Confirm Hero attack damage is increased by the equipped weapon.
+28. Confirm no runtime exceptions occur.
+29. Defeat an enemy and confirm small green loot rectangles appear near its death position.
+30. Confirm the `Enemy defeated! Loot dropped!` message appears when loot is generated.
+31. Approach a dropped item and press `E` to collect it; confirm it appears in the inventory.
+32. Confirm equipment loot does not auto-equip.
+33. Confirm inventory-full behaviour preserves dropped loot in the world.
+34. Allow an enemy to damage the Hero, then press `H`; confirm the Hero heals and the Healing Potion quantity decreases by one.
+35. Confirm health does not exceed maximum when healing near full health.
+36. Confirm `H` at full health shows `Health is already full.` and does not consume a potion.
+37. Confirm a dead Hero cannot use potions.
+38. Confirm the final potion in a stack removes the item from inventory.
 
 ## Automated Verification
 
 The project is verified with:
 
 ```powershell
-.\gradlew.bat build
-.\gradlew.bat lwjgl3:run
+$env:GRADLE_OPTS="-Xmx512m -XX:MaxMetaspaceSize=256m"
+.\gradlew.bat build --no-daemon
+.\gradlew.bat lwjgl3:run --no-daemon
 git diff --check
 ```
 
@@ -122,4 +149,4 @@ No test framework is currently configured, so no new testing dependency was intr
 
 ## Scope
 
-The current implementation uses LibGDX primitive geometry only. It does not include Box2D, Tiled, external assets, combat XP/loot, skills, equipment, item effects/usage, advanced stats, healing, respawning, loot tables, shops, crafting, advanced AI behaviors (patrols, flocking, bosses), save/load, audio, networking, or a final UI/HUD.
+The current implementation uses LibGDX primitive geometry only. It does not include Box2D, Tiled, external assets, combat XP/loot, skills, item rarity, item icons, advanced stat systems, temporary buffs/status effects, mana/energy, multiple consumable types, potion hotbar, merchants, shops, crafting, advanced AI behaviors (patrols, flocking, bosses), save/load, audio, networking, or a final UI/HUD.

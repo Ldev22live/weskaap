@@ -3,28 +3,33 @@ package com.weskaap.game.player;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.weskaap.game.combat.Combatant;
+import com.weskaap.game.equipment.Equipment;
 import com.weskaap.game.inventory.Inventory;
 
 public class Hero implements Combatant {
     public static final float SIZE = 32f;
     public static final float COLLISION_WIDTH = 28f;
     public static final float COLLISION_HEIGHT = 28f;
-    public static final int MAXIMUM_HEALTH = 100;
+    public static final int BASE_MAXIMUM_HEALTH = 100;
+    public static final int BASE_ATTACK = 0;
+    public static final int BASE_ARMOUR = 0;
 
     private final Vector2 position;
     private final Vector2 facingDirection;
     private final Rectangle collisionBounds;
-    private final float movementSpeed;
+    private final float baseMovementSpeed;
     private final Inventory inventory;
+    private final Equipment equipment;
     private int health;
 
     public Hero(float x, float y, float movementSpeed) {
         position = new Vector2(x, y);
         facingDirection = new Vector2(0f, -1f);
         collisionBounds = new Rectangle();
-        this.movementSpeed = movementSpeed;
+        baseMovementSpeed = movementSpeed;
         inventory = new Inventory();
-        health = MAXIMUM_HEALTH;
+        equipment = new Equipment();
+        health = BASE_MAXIMUM_HEALTH;
         updateCollisionBounds();
     }
 
@@ -40,8 +45,28 @@ public class Hero implements Combatant {
         return position.y;
     }
 
+    public float getBaseMovementSpeed() {
+        return baseMovementSpeed;
+    }
+
     public float getMovementSpeed() {
-        return movementSpeed;
+        return baseMovementSpeed + equipment.getTotalStats().getMovementModifier();
+    }
+
+    public int getBaseAttack() {
+        return BASE_ATTACK;
+    }
+
+    public int getTotalAttack() {
+        return BASE_ATTACK + equipment.getTotalStats().getDamage() + equipment.getTotalStats().getAttackBonus();
+    }
+
+    public int getBaseArmour() {
+        return BASE_ARMOUR;
+    }
+
+    public int getTotalArmour() {
+        return BASE_ARMOUR + equipment.getTotalStats().getArmour();
     }
 
     @Override
@@ -51,7 +76,17 @@ public class Hero implements Combatant {
 
     @Override
     public int getMaximumHealth() {
-        return MAXIMUM_HEALTH;
+        return BASE_MAXIMUM_HEALTH + equipment.getTotalStats().getHealthBonus();
+    }
+
+    public boolean isAtFullHealth() {
+        return health >= getMaximumHealth();
+    }
+
+    public void heal(int amount) {
+        if (amount > 0 && isAlive()) {
+            health = Math.min(getMaximumHealth(), health + amount);
+        }
     }
 
     @Override
@@ -84,6 +119,10 @@ public class Hero implements Combatant {
 
     public Inventory getInventory() {
         return inventory;
+    }
+
+    public Equipment getEquipment() {
+        return equipment;
     }
 
     public void moveBy(float xAmount, float yAmount) {
