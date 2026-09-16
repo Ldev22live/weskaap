@@ -7,47 +7,77 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Vector3;
+import com.weskaap.game.dialogue.DialogueUi;
+import com.weskaap.game.interaction.Interactable;
+import com.weskaap.game.ui.BitmapFontWrapper;
+import com.weskaap.game.ui.DialogueStage;
+import com.weskaap.game.ui.GameHud;
 import com.weskaap.game.world.GameWorld;
+import com.weskaap.game.world3d.IsometricCamera;
+import com.weskaap.game.world3d.WorldCoordinateConverter;
 
 public class MainGameScreen implements Screen {
     private final GameWorld world;
-    private final OrthographicCamera camera;
+    private final IsometricCamera worldCamera;
     private final OrthographicCamera uiCamera;
     private final SpriteBatch spriteBatch;
     private final BitmapFont font;
+    private final BitmapFontWrapper fontWrapper;
+    private final ShapeRenderer shapeRenderer;
+    private final GameHud gameHud;
+    private final DialogueStage dialogueStage;
 
     public MainGameScreen() {
         world = new GameWorld();
-        camera = new OrthographicCamera();
+        worldCamera = new IsometricCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(),
+            GameWorld.WIDTH, GameWorld.HEIGHT);
         uiCamera = new OrthographicCamera();
         spriteBatch = new SpriteBatch();
         font = new BitmapFont();
         font.setColor(Color.WHITE);
+        fontWrapper = new BitmapFontWrapper(font);
+        shapeRenderer = new ShapeRenderer();
+        gameHud = new GameHud(world, new DialogueUi(world.getDialogueController()),
+            Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        dialogueStage = new DialogueStage(world.getDialogueController(), font);
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     @Override
     public void show() {
+        Gdx.input.setInputProcessor(dialogueStage);
     }
 
     @Override
     public void render(float delta) {
         world.update(delta);
         updateCamera();
+        updateInteractionPromptPosition();
 
-        Gdx.gl.glClearColor(0.05f, 0.05f, 0.08f, 1f);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        world.setProjectionMatrix(camera.combined);
-        world.render();
+        Gdx.gl.glClearColor(0.18f, 0.22f, 0.30f, 1f);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+        Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDepthFunc(GL20.GL_LEQUAL);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+        world.render3D(worldCamera);
+
+        Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+        Gdx.gl.glDisable(GL20.GL_CULL_FACE);
         renderUi();
+
+        dialogueStage.act(delta);
+        dialogueStage.draw();
     }
 
     @Override
     public void resize(int width, int height) {
-        camera.setToOrtho(false, width, height);
+        worldCamera.resize(width, height);
         uiCamera.setToOrtho(false, width, height);
-        updateCamera();
+        gameHud.resize(world, width, height);
+        dialogueStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -67,48 +97,32 @@ public class MainGameScreen implements Screen {
         world.dispose();
         spriteBatch.dispose();
         font.dispose();
+        shapeRenderer.dispose();
+        dialogueStage.dispose();
     }
 
     private void renderUi() {
         spriteBatch.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
         spriteBatch.begin();
-        String interactionMessage = world.getInteractionMessage();
-        if (interactionMessage != null) {
-            font.draw(spriteBatch, interactionMessage, 20f, uiCamera.viewportHeight - 20f);
-        }
-        String combatMessage = world.getCombatMessage();
-        if (combatMessage != null) {
-            font.draw(spriteBatch, combatMessage, 20f, uiCamera.viewportHeight - 40f);
-        }
-        String aiStateMessage = world.getAiStateMessage();
-        if (aiStateMessage != null) {
-            font.draw(spriteBatch, aiStateMessage, 20f, uiCamera.viewportHeight - 60f);
-        }
-        font.draw(spriteBatch, world.getHeroStatusMessage(), 20f, uiCamera.viewportHeight - 80f);
-        if (world.isInventoryVisible()) {
-            font.draw(spriteBatch, world.getInventoryText(), 20f, uiCamera.viewportHeight - 110f);
-        }
-        if (world.hasCurrentInteractable()) {
-            font.draw(spriteBatch, "[E] Interact", 20f, 30f);
-        }
+        gameHud.render(shapeRenderer, spriteBatch, fontWrapper, world,
+            uiCamera.viewportWidth, uiCamera.viewportHeight);
         spriteBatch.end();
     }
 
     private void updateCamera() {
-        float halfWidth = camera.viewportWidth * camera.zoom / 2f;
-        float halfHeight = camera.viewportHeight * camera.zoom / 2f;
-        camera.position.set(
-            clampCameraAxis(world.getHero().getX(), halfWidth, GameWorld.WIDTH),
-            clampCameraAxis(world.getHero().getY(), halfHeight, GameWorld.HEIGHT),
-            0f
-        );
-        camera.update();
+        worldCamera.update(world.getHero());
     }
 
-    private float clampCameraAxis(float target, float halfViewport, float worldSize) {
-        if (halfViewport * 2f >= worldSize) {
-            return worldSize / 2f;
+    private void updateInteractionPromptPosition() {
+        if (world.hasCurrentInteractable()) {
+            Interactable target = world.getCurrentInteractable();
+            Vector3 pos = WorldCoordinateConverter.to3D(
+                target.getInteractionPosition().x,
+                target.getInteractionPosition().y,
+                80f);
+            worldCamera.getCamera().project(pos);
+            gameHud.setInteractionPromptPosition(pos.x, pos.y);
         }
-        return MathUtils.clamp(target, halfViewport, worldSize - halfViewport);
     }
 }

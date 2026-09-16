@@ -20,15 +20,23 @@ public class CombatController {
     private final Rectangle attackBounds = new Rectangle();
     private float cooldownRemaining;
     private float attackDisplayTimer;
+    private boolean attackJustPressed;
     private Combatant lastHit;
     private int hitCount;
 
     public boolean update(float delta, Hero hero, List<PrototypeEnemy> combatants) {
         cooldownRemaining = Math.max(0f, cooldownRemaining - delta);
         attackDisplayTimer = Math.max(0f, attackDisplayTimer - delta);
-        if (!hero.isAlive() || !Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || cooldownRemaining > 0f) {
+        if (!hero.isAlive() || cooldownRemaining > 0f) {
             return false;
         }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            attackJustPressed = true;
+        }
+        if (!attackJustPressed) {
+            return false;
+        }
+        attackJustPressed = false;
 
         cooldownRemaining = BASIC_ATTACK_COOLDOWN;
         attackDisplayTimer = ATTACK_DISPLAY_DURATION;

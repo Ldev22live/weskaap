@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.weskaap.game.combat.Combatant;
 import com.weskaap.game.equipment.Equipment;
 import com.weskaap.game.inventory.Inventory;
+import com.weskaap.game.quest.QuestLog;
 
 public class Hero implements Combatant {
     public static final float SIZE = 32f;
@@ -20,6 +21,7 @@ public class Hero implements Combatant {
     private final float baseMovementSpeed;
     private final Inventory inventory;
     private final Equipment equipment;
+    private final QuestLog questLog;
     private int health;
 
     public Hero(float x, float y, float movementSpeed) {
@@ -29,6 +31,7 @@ public class Hero implements Combatant {
         baseMovementSpeed = movementSpeed;
         inventory = new Inventory();
         equipment = new Equipment();
+        questLog = new QuestLog();
         health = BASE_MAXIMUM_HEALTH;
         updateCollisionBounds();
     }
@@ -123,6 +126,10 @@ public class Hero implements Combatant {
 
     public Equipment getEquipment() {
         return equipment;
+    }
+
+    public QuestLog getQuestLog() {
+        return questLog;
     }
 
     public void moveBy(float xAmount, float yAmount) {

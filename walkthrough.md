@@ -2,7 +2,7 @@
 
 ## Overview
 
-This prototype covers milestones M1 through M11. It demonstrates a lightweight LibGDX desktop game with keyboard-controlled Hero movement, a simple world, camera following, static obstacle collision, interaction, basic combat, enemy pursuit AI, Hero health/damage/death, an item/inventory/equipment foundation with item statistics, a lightweight loot/enemy-drops foundation, and a consumables/healing foundation. All visuals are primitive shapes; no external assets are used.
+This prototype covers milestones M1 through M11. It demonstrates a lightweight LibGDX desktop game with keyboard-controlled Hero movement, a simple world, camera following, static obstacle collision, interaction, basic combat, enemy pursuit AI, Hero health/damage/death, an item/inventory/equipment foundation with item statistics, a lightweight loot/enemy-drops foundation, a consumables/healing foundation, and a quest system foundation. All visuals are primitive shapes; no external assets are used.
 
 ## Controls
 
@@ -14,6 +14,7 @@ This prototype covers milestones M1 through M11. It demonstrates a lightweight L
 - `E`: interact with a nearby NPC or item
 - `Space`: basic attack in the direction the Hero is facing
 - `I`: toggle inventory display
+- `Q`: toggle quest log display
 - `H`: use a Healing Potion from inventory
 
 ## Architecture
@@ -146,6 +147,121 @@ git diff --check
 ```
 
 No test framework is currently configured, so no new testing dependency was introduced.
+
+## M8 — Quest System Foundation
+
+### Overview
+
+M8 introduces a data-oriented quest system that integrates with the existing `Interactable` architecture. The system is intentionally minimal: it supports starting quests, progressing single `INTERACT` objectives, completing quests deterministically, and viewing a prototype quest log. It does not include rewards, branching, persistence, or advanced objective types.
+
+### New Package
+
+`com.weskaap.game.quest` contains:
+
+- `QuestObjective.java` — an objective with an id, description, extensible type enum, required progress, and current progress.
+- `Quest.java` — a quest with an id, name, description, state enum (`NOT_STARTED`, `ACTIVE`, `COMPLETED`), and a list of objectives.
+- `QuestLog.java` — the Hero's owned quest container with methods to add quests, find quests, start quests, progress objectives, and retrieve active or completed quests.
+- `QuestLogController.java` — reads the `Q` key and requests the quest log toggle.
+
+### Quest Architecture
+
+`Quest` stores immutable identity data and mutable state/objective progress. Objectives cannot progress past their required amount. A quest becomes `COMPLETED` automatically when all objectives are complete. `Quest` exposes an unmodifiable objective view and does not reference rendering or input classes.
+
+### QuestObjective Architecture
+
+`QuestObjective` uses `QuestObjective.Type` with a single M8 value:
+
+- `INTERACT`
+
+Additional types (`COLLECT`, `KILL`, `REACH_LOCATION`, `TALK`, `ESCORT`, `USE_ITEM`) are reserved for future milestones. Progress is clamped to the required amount; calling `progress` on a completed objective has no effect.
+
+### QuestLog Architecture
+
+`QuestLog` is owned by `Hero` and mirrors the pattern used by `Inventory`. It returns `ProgressResult` from `progressObjective` so the caller can generate appropriate feedback without embedding UI logic in the quest domain. The quest log never touches `SpriteBatch`, `ShapeRenderer`, `Camera`, `BitmapFont`, or screen coordinates.
+
+### Hero Integration
+
+`Hero` now owns a `QuestLog` and exposes `getQuestLog()`. No quest logic lives inside `Hero`; the class only provides access, matching the existing `Inventory` and `Equipment` ownership pattern.
+
+### NPC Interaction Integration
+
+`PrototypeNpc` has been extended with optional `questId` and `objectiveId` fields. The existing `interact()` behaviour is unchanged. `GameWorld` checks whether the current NPC is linked to a quest objective. On a valid interaction:
+
+1. If the quest is `NOT_STARTED`, the quest is started.
+2. The objective is progressed by one.
+3. If the objective completes, feedback is shown.
+4. If the quest becomes `COMPLETED`, completion feedback is shown.
+
+This reuses the existing `Interactable`, `InteractionController`, `PrototypeNpc`, and `GameWorld` flow without creating a second interaction system.
+
+### Prototype Quests
+
+Two prototype quests are registered in `GameWorld.setupQuests()`:
+
+- `quest_first_steps` — "First Steps": speak with the local guide.
+  - Objective: "Speak with the local guide" (`INTERACT`, required 1)
+- `quest_meet_the_neighbour` — "Meet the Neighbour": speak with the neighbour.
+  - Objective: "Speak with the neighbour" (`INTERACT`, required 1)
+
+The existing guide NPC at `(1700, 1320)` is linked to the first quest, and a new neighbour NPC at `(2100, 1100)` is linked to the second.
+
+### Quest UI
+
+Pressing `Q` toggles a minimal prototype quest log in the top-left of the screen. The display shows each quest's name, description, objective descriptions, progress (`current / required`), and current state. A dedicated quest message line also shows transient feedback such as `Quest started: First Steps`, `Objective complete: ...`, and `Quest completed: ...`.
+
+### Quest Completion Behaviour
+
+- Objectives cannot progress beyond their required amount.
+- A quest completes exactly once when all objectives reach required progress.
+- A completed quest cannot return to `ACTIVE` or `NOT_STARTED`.
+- Repeated interaction with an already-completed objective produces no new feedback.
+
+### Dead Hero Behaviour
+
+`GameWorld` only processes interactions while `hero.isAlive()` is true. Because quest progress is triggered from the same interaction block, a dead Hero cannot start, progress, or complete quests.
+
+### Update Flow
+
+The M8 update order remains unchanged from M6/M7:
+
+```text
+update messages/timers
+input toggles (inventory, quest log)
+Hero movement / collision
+enemy AI
+find nearest interactable
+interaction + quest progress (only if Hero alive)
+combat
+drop loot / cleanup
+consumables
+```
+
+Quest processing is inserted directly into the existing interaction step, so it does not interfere with movement, collision, combat, enemy AI, inventory, health, or death handling.
+
+### Manual Verification (M8)
+
+1. Run `\gradlew.bat lwjgl3:run` from the project root.
+2. Approach the blue guide NPC until `[E] Interact` appears.
+3. Press `E`; confirm `Quest started: First Steps` and `Quest completed: First Steps` feedback.
+4. Press `Q`; confirm the quest log shows `First Steps` with progress `1 / 1` and status `COMPLETED`.
+5. Approach the second blue NPC and press `E`; confirm `Quest started: Meet the Neighbour` and `Quest completed: Meet the Neighbour`.
+6. Press `Q` again and confirm both quests are listed as `COMPLETED`.
+7. Interact with either NPC again and confirm no duplicate completion feedback appears.
+8. Let the Hero die, approach a quest NPC, and press `E`; confirm no interaction or quest feedback occurs.
+9. Confirm existing M0–M7 behaviour (movement, combat, inventory, loot, consumables) still works.
+10. Confirm no runtime exceptions occur.
+
+### Known Limitations
+
+- Only `INTERACT` objectives are implemented.
+- No rewards, XP, levels, currency, or items are granted on quest completion.
+- No branching, prerequisites, timers, escort, kill, collection, or location objectives.
+- No quest persistence or save/load.
+- Quest UI is a prototype text list, not a final journal layout.
+
+### Out of Scope for M8
+
+Quest rewards, XP, levels, currency, branching quests, dialogue trees, dialogue choices, quest chains, quest prerequisites, quest timers, escort quests, kill quests, collection quests, location/reach objectives, quest persistence, save/load, networking, multiplayer, Tiled, Blender, external assets, sprites, animations, audio, advanced UI, inventory rewards, equipment rewards, and skill rewards.
 
 ## Scope
 

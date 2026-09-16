@@ -18,6 +18,10 @@ public class PrototypeItem implements Interactable {
         this.item = item;
     }
 
+    public Vector2 getPosition() {
+        return position;
+    }
+
     @Override
     public Vector2 getInteractionPosition() {
         return position;

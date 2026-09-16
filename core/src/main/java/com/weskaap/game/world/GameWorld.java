@@ -23,6 +23,16 @@ import com.weskaap.game.player.Hero;
 import com.weskaap.game.consumable.ConsumableController;
 import com.weskaap.game.consumable.ItemUseResult;
 import com.weskaap.game.player.HeroController;
+import com.weskaap.game.quest.Quest;
+import com.weskaap.game.quest.QuestController;
+import com.weskaap.game.quest.QuestLog;
+import com.weskaap.game.quest.QuestLogController;
+import com.weskaap.game.quest.QuestObjective;
+import com.weskaap.game.quest.QuestObjectiveType;
+import com.weskaap.game.dialogue.DialogueController;
+import com.weskaap.game.dialogue.DialogueInputController;
+import com.weskaap.game.dialogue.DialogueRepository;
+import com.weskaap.game.world3d.WorldRenderer3D;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,6 +45,7 @@ public class GameWorld {
 	private static final float GRID_SIZE = 128f;
 	private static final float MESSAGE_DURATION = 3f;
 	private static final float COMBAT_MESSAGE_DURATION = 2f;
+	private static final float QUEST_MESSAGE_DURATION = 3f;
 	private static final Color GROUND_COLOR = new Color(0.12f, 0.19f, 0.13f, 1f);
 	private static final Color HERO_COLOR = new Color(0.9f, 0.68f, 0.2f, 1f);
 	private static final Color NPC_COLOR = new Color(0.2f, 0.55f, 0.9f, 1f);
@@ -45,6 +56,7 @@ public class GameWorld {
 	private static final Color GRID_COLOR = new Color(0.22f, 0.32f, 0.23f, 1f);
 
 	private final ShapeRenderer shapeRenderer;
+	private final WorldRenderer3D worldRenderer3D;
 	private final Hero hero;
 	private final HeroController heroController;
 	private final InteractionController interactionController;
@@ -52,6 +64,10 @@ public class GameWorld {
 	private final CombatController combatController;
 	private final LootGenerator lootGenerator;
 	private final ConsumableController consumableController;
+	private final QuestLogController questLogController;
+	private final DialogueController dialogueController;
+	private final DialogueInputController dialogueInputController;
+	private final QuestController questController;
 	private final List<Rectangle> obstacles;
 	private final List<Rectangle> collisionBounds;
 	private final List<Interactable> interactables;
@@ -65,6 +81,9 @@ public class GameWorld {
 	private float combatMessageTimer;
 	private String aiStateMessage;
 	private boolean inventoryVisible;
+	private boolean questLogVisible;
+	private String questMessage;
+	private float questMessageTimer;
 
 	public GameWorld() {
 		shapeRenderer = new ShapeRenderer();
@@ -76,12 +95,19 @@ public class GameWorld {
 		combatController = new CombatController();
 		lootGenerator = new LootGenerator();
 		consumableController = new ConsumableController();
+		questLogController = new QuestLogController();
+		dialogueController = new DialogueController();
+		dialogueInputController = new DialogueInputController(dialogueController);
+		questController = new QuestController(hero.getQuestLog());
+		dialogueController.setQuestController(questController);
+		setupQuests();
 		obstacles = createObstacles();
 		worldItems = createWorldItems();
 		interactables = createInteractables();
 		enemies = createEnemies();
 		enemyAiControllers = createEnemyAiControllers();
 		collisionBounds = createCollisionBounds();
+		worldRenderer3D = new WorldRenderer3D(this);
 	}
 
 	public Hero getHero() {
@@ -112,12 +138,44 @@ public class GameWorld {
 		return currentInteractable != null;
 	}
 
+	public Interactable getCurrentInteractable() {
+		return currentInteractable;
+	}
+
 	public boolean isInventoryVisible() {
 		return inventoryVisible;
 	}
 
+	public boolean isQuestLogVisible() {
+		return questLogVisible;
+	}
+
+	public String getQuestMessage() {
+		return questMessage;
+	}
+
+	public boolean isDialogueActive() {
+		return dialogueController.isActive();
+	}
+
+	public DialogueController getDialogueController() {
+		return dialogueController;
+	}
+
 	public List<PrototypeItem> getWorldItems() {
 		return worldItems;
+	}
+
+	public List<PrototypeEnemy> getEnemies() {
+		return enemies;
+	}
+
+	public List<Interactable> getInteractables() {
+		return interactables;
+	}
+
+	public CombatController getCombatController() {
+		return combatController;
 	}
 
 	public String getInventoryText() {
@@ -138,11 +196,36 @@ public class GameWorld {
 		return builder.toString();
 	}
 
+	public String getQuestLogText() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("QUEST LOG");
+		for (Quest quest : hero.getQuestLog().getQuests()) {
+			builder.append("\n\n").append(quest.getTitle());
+			builder.append("\n").append(quest.getDescription());
+			for (QuestObjective objective : quest.getObjectives()) {
+				builder.append("\n").append(objective.getDescription());
+				builder.append("\nProgress: ").append(objective.getCurrentAmount())
+					.append(" / ").append(objective.getRequiredAmount());
+			}
+			builder.append("\nStatus: ").append(quest.getState());
+		}
+		return builder.toString();
+	}
+
 	public void update(float delta) {
 		updateInteractionMessage(delta);
 		updateCombatMessage(delta);
+		updateQuestMessage(delta);
 		if (inventoryController.isToggleRequested()) {
 			inventoryVisible = !inventoryVisible;
+		}
+		if (questLogController.isToggleRequested()) {
+			questLogVisible = !questLogVisible;
+		}
+		if (dialogueController.isActive()) {
+			dialogueInputController.update();
+			updateEnemyAi(delta);
+			return;
 		}
 		Vector2 movement = heroController.getMovement(hero, delta);
 		if (hero.isAlive()) {
@@ -155,6 +238,8 @@ public class GameWorld {
 			interactionMessageTimer = MESSAGE_DURATION;
 			if (currentInteractable instanceof PrototypeItem) {
 				collectItem((PrototypeItem) currentInteractable);
+			} else if (currentInteractable instanceof PrototypeNpc) {
+				handleNpcInteraction((PrototypeNpc) currentInteractable);
 			}
 		}
 		if (hero.isAlive() && combatController.update(delta, hero, enemies) && combatController.getHitCount() > 0) {
@@ -165,6 +250,10 @@ public class GameWorld {
 		if (consumableResult != null) {
 			updateConsumableFeedback(consumableResult);
 		}
+	}
+
+	public void render3D(com.weskaap.game.world3d.IsometricCamera camera) {
+		worldRenderer3D.render(camera, this);
 	}
 
 	public void render() {
@@ -228,9 +317,26 @@ public class GameWorld {
 
 	private List<Interactable> createInteractables() {
 		List<Interactable> worldInteractables = new ArrayList<>();
-		worldInteractables.add(new PrototypeNpc(1700f, 1320f, "Hello, Hero!"));
+		worldInteractables.add(new PrototypeNpc(1700f, 1320f, "Hello, Hero! I have a task for you.",
+			"quest_first_steps", "speak-local-guide"));
+		worldInteractables.add(new PrototypeNpc(2100f, 1100f, "Howzit, neighbour.",
+			"quest_meet_the_neighbour", "speak-neighbour"));
+		worldInteractables.add(new PrototypeNpc(1300f, 1000f, "Tubby Angel awaits.",
+			DialogueRepository.createTubbyAngelDialogue()));
 		worldInteractables.addAll(worldItems);
 		return worldInteractables;
+	}
+
+	private void setupQuests() {
+		Quest firstSteps = new Quest("quest_first_steps", "First Steps", "Speak with the local guide.",
+			List.of(new QuestObjective("speak-local-guide", "Speak with the local guide",
+				QuestObjectiveType.TALK_TO_NPC, "speak-local-guide", 1)));
+		Quest meetTheNeighbour = new Quest("quest_meet_the_neighbour", "Meet the Neighbour",
+			"Interact with another person in the area.",
+			List.of(new QuestObjective("speak-neighbour", "Speak with the neighbour",
+				QuestObjectiveType.TALK_TO_NPC, "speak-neighbour", 1)));
+		hero.getQuestLog().add(firstSteps);
+		hero.getQuestLog().add(meetTheNeighbour);
 	}
 
 	private void setupStartingEquipment() {
@@ -297,6 +403,37 @@ public class GameWorld {
 		return worldCollisionBounds;
 	}
 
+	private void handleNpcInteraction(PrototypeNpc npc) {
+		if (npc.hasDialogue()) {
+			dialogueController.startDialogue(npc.getDialogue());
+			return;
+		}
+		handleQuestInteraction(npc);
+	}
+
+	private void handleQuestInteraction(PrototypeNpc npc) {
+		if (!npc.hasQuestObjective()) {
+			return;
+		}
+		String questId = npc.getQuestId();
+		String objectiveId = npc.getObjectiveId();
+		Quest quest = questController.getQuest(questId);
+		if (quest == null) {
+			return;
+		}
+		if (questController.isQuestAvailable(questId)) {
+			if (questController.startQuest(questId)) {
+				questMessage = "Quest started: " + quest.getTitle();
+				questMessageTimer = QUEST_MESSAGE_DURATION;
+			}
+		}
+		questController.updateObjective(objectiveId);
+		if (questController.isQuestCompleted(questId)) {
+			questMessage = "Quest completed: " + quest.getTitle();
+			questMessageTimer = QUEST_MESSAGE_DURATION;
+		}
+	}
+
 	private void collectItem(PrototypeItem prototypeItem) {
 		if (hero.getInventory().add(prototypeItem.getItem())) {
 			worldItems.remove(prototypeItem);
@@ -352,6 +489,16 @@ public class GameWorld {
 		combatMessageTimer = Math.max(0f, combatMessageTimer - delta);
 		if (combatMessageTimer == 0f) {
 			combatMessage = null;
+		}
+	}
+
+	private void updateQuestMessage(float delta) {
+		if (questMessageTimer <= 0f) {
+			return;
+		}
+		questMessageTimer = Math.max(0f, questMessageTimer - delta);
+		if (questMessageTimer == 0f) {
+			questMessage = null;
 		}
 	}
 
@@ -456,5 +603,6 @@ public class GameWorld {
 
 	public void dispose() {
 		shapeRenderer.dispose();
+		worldRenderer3D.dispose();
 	}
 }
