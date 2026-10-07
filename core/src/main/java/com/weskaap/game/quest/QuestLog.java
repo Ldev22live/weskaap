@@ -59,4 +59,22 @@ public class QuestLog {
         }
         return Collections.unmodifiableList(completed);
     }
+
+    public QuestLogSnapshot snapshot() {
+        List<QuestProgressSnapshot> snapshots = new ArrayList<>();
+        for (Quest quest : quests) snapshots.add(quest.snapshot());
+        return new QuestLogSnapshot(snapshots);
+    }
+
+    public void restore(QuestLogSnapshot snapshot) {
+        if (snapshot == null) throw new IllegalArgumentException("Snapshot cannot be null");
+        quests.clear();
+        for (QuestProgressSnapshot progress : snapshot.getQuests()) {
+            Quest quest = QuestRepository.getQuest(progress.getQuestId());
+            if (quest != null) {
+                quest.restore(progress);
+                quests.add(quest);
+            }
+        }
+    }
 }

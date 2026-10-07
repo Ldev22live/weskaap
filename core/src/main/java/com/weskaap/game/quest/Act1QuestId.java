@@ -1,0 +1,33 @@
+package com.weskaap.game.quest;
+
+public enum Act1QuestId {
+    A_PLACE_TO_STAY,
+    THE_LIGHTS_GO_OUT,
+    NOTHING_IN_THE_CUPBOARD,
+    ANY_WORK,
+    FIRST_PAYCHECK,
+    CPUT_REGISTRATION,
+    TWO_LIVES,
+    THE_BROKEN_CAR,
+    ROADSIDE_RESCUE,
+    THE_MISSING_DOG,
+    THE_DOGS_TRAIL,
+    THE_MISSING_BROTHER,
+    THE_WRONG_CROWD,
+    SOMETHING_IS_MISSING,
+    THE_THEFT,
+    PAYBACK,
+    FAMILY_DEBT,
+    ELECTRICITY_AGAIN,
+    THE_LONG_WAY_HOME,
+    THE_EXAMINATION,
+    TUBBYS_PROBLEM,
+    THE_ANGELS_BURDEN,
+    THE_FAMILY_GATHERING,
+    THE_LAST_JOB,
+    DEPARTURE;
+
+    public String id() {
+        return "act1_" + name().toLowerCase();
+    }
+}

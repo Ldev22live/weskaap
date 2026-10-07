@@ -1,0 +1,26 @@
+{
+  "model_name": "hero_3d_concept_idea",
+  "source_image_path": "C:\\Users\\lorean.devries\\Documents\\playground\\weskaap\\assets\\concept-art\\characters\\hero_3D_concept_idea.png",
+  "model_path": "C:\\Users\\lorean.devries\\Documents\\playground\\weskaap\\assets\\concept-art\\characters\\hero_3D_concept_idea.blend",
+  "model_description": "A smooth, rounded 3D model of a young man with curly hair, wearing a blue jacket, white shirt, khaki pants, and brown boots. The model is designed to match the reference image's proportions, silhouette, and details (e.g., belt, belt buckle, shirt buttons, jacket buttons, and tail). The model is optimized for real-time rendering and retains the original design's key features (pointed ears, defined muzzle, natural neck transition, and curved tail).",
+  "steps": [
+    "Create a backup of the original model files in a new directory.",
+    "Import the reference image into Blender as a background for modeling.",
+    "Model the head (curly hair, facial features, expression) using sculpting or mesh editing.",
+    "Model the torso (blue jacket, white shirt, belt, belt buckle) with attention to fabric folds and button details.",
+    "Model the legs (khaki pants, brown boots) with realistic proportions and details.",
+    "Model the tail (curved, segmented if needed) to match the reference.",
+    "Join all parts into a single mesh object for efficient editing.",
+    "Apply Subdivision Surface modifier (Level 1) for smoothness while preserving sharp details.",
+    "Recalculate normals to ensure proper lighting and shading.",
+    "Apply smooth shading and adjust materials to match the reference's color palette.",
+    "Save the final model as hero_3D_concept_idea.blend in the same directory as the reference image."
+  ],
+  "notes": [
+    "Preserve the original proportions and silhouette; do not redesign the model.",
+    "Avoid over-smoothing facial features, nose, eyes, or ear tips.",
+    "Use Subdivision Surface modifier only where needed (e.g., body, legs, tail) to maintain efficiency.",
+    "Ensure UV mapping is preserved for potential texturing.",
+    "Verify the model looks naturally rounded and realistic under normal lighting, not just blurred."
+  ]
+}

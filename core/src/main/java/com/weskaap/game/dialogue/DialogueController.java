@@ -1,5 +1,6 @@
 package com.weskaap.game.dialogue;
 
+import com.badlogic.gdx.Gdx;
 import com.weskaap.game.quest.QuestController;
 import java.util.List;
 
@@ -21,6 +22,10 @@ public class DialogueController {
         this.currentDialogue = dialogue;
         this.currentNode = dialogue.getStartingNode();
         this.active = true;
+        if (currentNode != null && Gdx.app != null) {
+            Gdx.app.log("DialogueDebug", "startDialogue: dialogue=" + dialogue.getId()
+                + " startingNode=" + currentNode.getId() + " options=" + currentNode.getOptions().size());
+        }
     }
 
     public void endDialogue() {
@@ -82,6 +87,11 @@ public class DialogueController {
             return false;
         }
         DialogueOption selected = options.get(index);
+        if (Gdx.app != null) {
+            Gdx.app.log("DialogueDebug", "selectOption: index=" + index + " text=" + selected.getText()
+                + " questId=" + selected.getQuestId() + " objectiveId=" + selected.getObjectiveId()
+                + " target=" + selected.getTargetNodeId());
+        }
         DialogueNode next = currentDialogue.getNode(selected.getTargetNodeId());
         if (next == null) {
             endDialogue();

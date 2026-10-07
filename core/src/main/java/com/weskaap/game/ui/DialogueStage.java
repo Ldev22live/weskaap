@@ -41,7 +41,6 @@ public class DialogueStage extends Stage {
 
     private String lastNodeId;
     private boolean wasActive;
-    private boolean logged;
 
     public DialogueStage(DialogueController controller, BitmapFont font) {
         super(new ScreenViewport());
@@ -137,17 +136,16 @@ public class DialogueStage extends Stage {
             }
 
             table.setVisible(true);
-            logged = false;
             speakerLabel.setText(node.getSpeaker().toUpperCase());
             textLabel.setText(node.getText());
             optionsTable.clear();
-
             if (Gdx.app != null) {
-                Gdx.app.log("DialogueStage",
-                    "nodeId=" + node.getId()
-                        + " speaker=[" + node.getSpeaker() + "]"
-                        + " text=[" + node.getText() + "]"
-                        + " options=" + (node.getOptions() == null ? 0 : node.getOptions().size()));
+                Gdx.app.log("DialogueDebug", "refresh: node=" + node.getId() + " speaker=" + node.getSpeaker()
+                    + " text=" + node.getText() + " options=" + node.getOptions().size());
+                for (DialogueOption option : node.getOptions()) {
+                    Gdx.app.log("DialogueDebug", "  option text=" + option.getText()
+                        + " next=" + option.getTargetNodeId() + " quest=" + option.getQuestId());
+                }
             }
 
             if (node.hasOptions()) {
@@ -183,15 +181,6 @@ public class DialogueStage extends Stage {
         float height = Math.min(PANEL_HEIGHT, screenHeight - UiConstants.PANEL_MARGIN * 4f);
         table.setSize(width, height);
         table.setPosition((screenWidth - width) / 2f, UiConstants.PANEL_MARGIN);
-
-        if (Gdx.app != null && !logged) {
-            Gdx.app.log("DialogueStage",
-                "table=" + table.getWidth() + "x" + table.getHeight()
-                    + " pos=" + table.getX() + "," + table.getY()
-                    + " speaker=[" + speakerLabel.getText()
-                    + "] text=[" + textLabel.getText() + "]");
-            logged = true;
-        }
     }
 
     private static Texture createColorTexture(Color color) {

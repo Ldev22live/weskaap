@@ -19,12 +19,13 @@ public class InteractionPrompt {
         this.y = y;
     }
 
-    public void render(ShapeRenderer shapeRenderer, SpriteBatch spriteBatch, BitmapFontWrapper font, boolean visible) {
+    public void render(ShapeRenderer shapeRenderer, SpriteBatch spriteBatch, BitmapFontWrapper font,
+                       boolean visible, String promptText) {
         if (!visible) {
             return;
         }
 
-        float bubbleWidth = 120f;
+        float bubbleWidth = 140f;
         float bubbleHeight = 72f;
         float bubbleX = x - bubbleWidth / 2f;
         float bubbleY = y + 32f;
@@ -47,6 +48,7 @@ public class InteractionPrompt {
         shapeRenderer.end();
 
         spriteBatch.begin();
-        font.draw(spriteBatch, "[E]", bubbleX, bubbleY + 46, bubbleWidth, Align.center, UiConstants.TEXT_DEFAULT);
+        String text = promptText == null || promptText.isEmpty() ? "[E]" : "[E] " + promptText;
+        font.draw(spriteBatch, text, bubbleX, bubbleY + 46, bubbleWidth, Align.center, UiConstants.TEXT_DEFAULT);
     }
 }

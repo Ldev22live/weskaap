@@ -3,6 +3,7 @@ package com.weskaap.game.player;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.weskaap.game.combat.Combatant;
+import com.weskaap.game.economy.Wallet;
 import com.weskaap.game.equipment.Equipment;
 import com.weskaap.game.inventory.Inventory;
 import com.weskaap.game.quest.QuestLog;
@@ -22,7 +23,11 @@ public class Hero implements Combatant {
     private final Inventory inventory;
     private final Equipment equipment;
     private final QuestLog questLog;
+    private final Wallet wallet;
     private int health;
+    private float platformerHeight;
+    private float platformerVelocityY;
+    private boolean grounded;
 
     public Hero(float x, float y, float movementSpeed) {
         position = new Vector2(x, y);
@@ -32,6 +37,7 @@ public class Hero implements Combatant {
         inventory = new Inventory();
         equipment = new Equipment();
         questLog = new QuestLog();
+        wallet = new Wallet();
         health = BASE_MAXIMUM_HEALTH;
         updateCollisionBounds();
     }
@@ -132,6 +138,10 @@ public class Hero implements Combatant {
         return questLog;
     }
 
+    public Wallet getWallet() {
+        return wallet;
+    }
+
     public void moveBy(float xAmount, float yAmount) {
         position.add(xAmount, yAmount);
         updateCollisionBounds();
@@ -140,6 +150,30 @@ public class Hero implements Combatant {
     public void setPosition(float x, float y) {
         position.set(x, y);
         updateCollisionBounds();
+    }
+
+    public float getPlatformerHeight() {
+        return platformerHeight;
+    }
+
+    public void setPlatformerHeight(float platformerHeight) {
+        this.platformerHeight = platformerHeight;
+    }
+
+    public float getPlatformerVelocityY() {
+        return platformerVelocityY;
+    }
+
+    public void setPlatformerVelocityY(float platformerVelocityY) {
+        this.platformerVelocityY = platformerVelocityY;
+    }
+
+    public boolean isGrounded() {
+        return grounded;
+    }
+
+    public void setGrounded(boolean grounded) {
+        this.grounded = grounded;
     }
 
     private void updateCollisionBounds() {

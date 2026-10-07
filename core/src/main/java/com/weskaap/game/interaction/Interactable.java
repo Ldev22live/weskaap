@@ -13,6 +13,10 @@ public interface Interactable {
 
     String interact();
 
+    default String getPromptText() {
+        return "";
+    }
+
     default boolean canInteract(Hero hero) {
         return getInteractionPosition().dst2(hero.getPosition())
             <= getInteractionRange() * getInteractionRange();

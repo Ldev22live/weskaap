@@ -74,6 +74,6 @@ public class GameHud {
         font.draw(spriteBatch, "[Q] Quest Log", UiConstants.PADDING, UiConstants.QUEST_LOG_PROMPT_Y, UiConstants.HINT_COLOR);
 
         boolean showInteractPrompt = world.hasCurrentInteractable() && !world.isDialogueActive();
-        interactionPrompt.render(shapeRenderer, spriteBatch, font, showInteractPrompt);
+        interactionPrompt.render(shapeRenderer, spriteBatch, font, showInteractPrompt, world.getCurrentPromptText());
     }
 }

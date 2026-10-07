@@ -2,6 +2,7 @@ package com.weskaap.game.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -11,9 +12,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector3;
 import com.weskaap.game.dialogue.DialogueUi;
 import com.weskaap.game.interaction.Interactable;
+import com.weskaap.game.interaction.TravelPoint;
 import com.weskaap.game.ui.BitmapFontWrapper;
 import com.weskaap.game.ui.DialogueStage;
 import com.weskaap.game.ui.GameHud;
+import com.weskaap.game.ui.TravelMenuStage;
 import com.weskaap.game.world.GameWorld;
 import com.weskaap.game.world3d.IsometricCamera;
 import com.weskaap.game.world3d.WorldCoordinateConverter;
@@ -28,6 +31,8 @@ public class MainGameScreen implements Screen {
     private final ShapeRenderer shapeRenderer;
     private final GameHud gameHud;
     private final DialogueStage dialogueStage;
+    private final TravelMenuStage travelMenuStage;
+    private final InputMultiplexer inputMultiplexer;
 
     public MainGameScreen() {
         world = new GameWorld();
@@ -42,12 +47,14 @@ public class MainGameScreen implements Screen {
         gameHud = new GameHud(world, new DialogueUi(world.getDialogueController()),
             Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         dialogueStage = new DialogueStage(world.getDialogueController(), font);
+        travelMenuStage = new TravelMenuStage(world.getTravelController(), font);
+        inputMultiplexer = new InputMultiplexer(travelMenuStage, dialogueStage);
         resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
     }
 
     @Override
     public void show() {
-        Gdx.input.setInputProcessor(dialogueStage);
+        Gdx.input.setInputProcessor(inputMultiplexer);
     }
 
     @Override
@@ -70,6 +77,8 @@ public class MainGameScreen implements Screen {
 
         dialogueStage.act(delta);
         dialogueStage.draw();
+        travelMenuStage.act(delta);
+        travelMenuStage.draw();
     }
 
     @Override
@@ -78,6 +87,7 @@ public class MainGameScreen implements Screen {
         uiCamera.setToOrtho(false, width, height);
         gameHud.resize(world, width, height);
         dialogueStage.getViewport().update(width, height, true);
+        travelMenuStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -99,6 +109,7 @@ public class MainGameScreen implements Screen {
         font.dispose();
         shapeRenderer.dispose();
         dialogueStage.dispose();
+        travelMenuStage.dispose();
     }
 
     private void renderUi() {
@@ -107,11 +118,27 @@ public class MainGameScreen implements Screen {
         spriteBatch.begin();
         gameHud.render(shapeRenderer, spriteBatch, fontWrapper, world,
             uiCamera.viewportWidth, uiCamera.viewportHeight);
+        renderAreaLabels();
         spriteBatch.end();
     }
 
+    private void renderAreaLabels() {
+        if (world.isInBuilding()) {
+            return;
+        }
+        TravelPoint station = world.getActiveTravelPoint();
+        if (station == null) {
+            return;
+        }
+        Vector3 labelPosition = WorldCoordinateConverter.to3D(
+            station.getInteractionPosition().x, station.getInteractionPosition().y, 110f);
+        worldCamera.getCamera().project(labelPosition);
+        font.setColor(Color.WHITE);
+        font.draw(spriteBatch, station.getName(), labelPosition.x - 60f, labelPosition.y, 120f, 1, false);
+    }
+
     private void updateCamera() {
-        worldCamera.update(world.getHero());
+        worldCamera.update(world.getHero(), world.getCameraMode());
     }
 
     private void updateInteractionPromptPosition() {

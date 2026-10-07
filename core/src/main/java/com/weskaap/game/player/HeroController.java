@@ -19,6 +19,16 @@ public class HeroController {
         return movement;
     }
 
+    public float getPlatformerHorizontalInput() {
+        return getHorizontalInput();
+    }
+
+    public boolean isJumpRequested() {
+        return Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
+            || Gdx.input.isKeyJustPressed(Input.Keys.W)
+            || Gdx.input.isKeyJustPressed(Input.Keys.UP);
+    }
+
     private float getHorizontalInput() {
         float horizontal = 0f;
         if (Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT)) {

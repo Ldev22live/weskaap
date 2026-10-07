@@ -1,8 +1,10 @@
 package com.weskaap.game.quest;
 
 public enum QuestState {
+    LOCKED,
     AVAILABLE,
-    ACTIVE,
+    ACCEPTED,
+    IN_PROGRESS,
     COMPLETED,
     FAILED
 }
