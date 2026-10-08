@@ -160,6 +160,16 @@ public class WorldRenderer3D implements Disposable {
             for (ModelInstance interactable : interactableInstances) {
                 modelBatch.render(interactable, environment);
             }
+            if (world.getActiveInterior() != null && world.getActiveInterior().isCombatAllowed()) {
+                updateEnemies(world);
+                for (ModelInstance enemy : enemyInstances) {
+                    modelBatch.render(enemy, environment);
+                }
+                updateAttack(world);
+                if (world.getCombatController().isAttackVisible()) {
+                    modelBatch.render(attackInstance, environment);
+                }
+            }
         } else {
             modelBatch.render(groundInstance, environment);
             for (ModelInstance road : roadInstances) {
@@ -236,12 +246,27 @@ public class WorldRenderer3D implements Disposable {
 
     private void updateEnemies(GameWorld world) {
         List<PrototypeEnemy> enemies = world.getEnemies();
+        float baseHeight = world.isInBuilding() && world.getActiveInterior() != null
+            ? getInteriorFloorHeight(world.getActiveInterior())
+            : GROUND_Y;
         for (int i = 0; i < enemies.size(); i++) {
             PrototypeEnemy enemy = enemies.get(i);
             ModelInstance instance = enemyInstances.get(i);
             instance.transform.setToTranslation(work.set(enemy.getPosition().x,
-                GROUND_Y + PrototypeEnemy.SIZE / 2f, enemy.getPosition().y));
+                baseHeight + PrototypeEnemy.SIZE / 2f, enemy.getPosition().y));
         }
+    }
+
+    private float getInteriorFloorHeight(Interior interior) {
+        float lowestTop = Float.MAX_VALUE;
+        for (InteriorPlatform platform : interior.getPlatforms()) {
+            Rectangle bounds = platform.getBounds();
+            float top = bounds.y + bounds.height;
+            if (top < lowestTop) {
+                lowestTop = top;
+            }
+        }
+        return lowestTop == Float.MAX_VALUE ? GROUND_Y : lowestTop;
     }
 
     private void updateItems(GameWorld world) {

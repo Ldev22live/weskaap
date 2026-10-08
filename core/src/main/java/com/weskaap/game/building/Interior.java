@@ -5,6 +5,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.weskaap.game.interaction.Interactable;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class Interior {
@@ -20,7 +21,9 @@ public class Interior {
     private final List<Rectangle> obstacles;
     private final List<Interactable> interactables;
     private final List<InteriorPlatform> platforms;
+    private final List<com.weskaap.game.enemy.PrototypeEnemy> interiorEnemies;
     private final BuildingExit exit;
+    private boolean combatAllowed;
 
     public Interior(String id, float width, float height,
                     float spawnX, float spawnY,
@@ -36,6 +39,8 @@ public class Interior {
         this.exit = new BuildingExit(exitX, exitY, this);
         this.interactables = new ArrayList<>();
         this.interactables.add(this.exit);
+        this.interiorEnemies = new ArrayList<>();
+        this.combatAllowed = false;
     }
 
     public String getId() {
@@ -70,12 +75,46 @@ public class Interior {
         interactables.add(interactable);
     }
 
+    public void addObstacle(Rectangle obstacle) {
+        if (obstacle != null) {
+            obstacles.add(obstacle);
+        }
+    }
+
+    public void addPlatform(InteriorPlatform platform) {
+        if (platform != null) {
+            platforms.add(platform);
+        }
+    }
+
     public BuildingExit getExit() {
         return exit;
     }
 
     public List<InteriorPlatform> getPlatforms() {
         return platforms;
+    }
+
+    public boolean isCombatAllowed() {
+        return combatAllowed;
+    }
+
+    public void setCombatAllowed(boolean combatAllowed) {
+        this.combatAllowed = combatAllowed;
+    }
+
+    public void addInteriorEnemy(com.weskaap.game.enemy.PrototypeEnemy enemy) {
+        if (enemy != null) {
+            interiorEnemies.add(enemy);
+        }
+    }
+
+    public List<com.weskaap.game.enemy.PrototypeEnemy> getInteriorEnemies() {
+        return Collections.unmodifiableList(interiorEnemies);
+    }
+
+    public boolean hasInteriorEnemies() {
+        return !interiorEnemies.isEmpty();
     }
 
     private List<InteriorPlatform> createPlatforms() {

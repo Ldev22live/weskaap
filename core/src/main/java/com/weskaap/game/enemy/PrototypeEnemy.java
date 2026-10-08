@@ -8,6 +8,7 @@ import com.weskaap.game.loot.LootTable;
 public class PrototypeEnemy implements Combatant {
     public static final float SIZE = 32f;
 
+    private final String id;
     private final Vector2 position;
     private final Rectangle bounds;
     private final int maximumHealth;
@@ -16,10 +17,19 @@ public class PrototypeEnemy implements Combatant {
     private boolean lootDropped;
 
     public PrototypeEnemy(float x, float y, int maximumHealth, float speed) {
+        this("prototype_enemy", x, y, maximumHealth, speed);
+    }
+
+    public PrototypeEnemy(String id, float x, float y, int maximumHealth, float speed) {
+        this.id = id != null ? id : "prototype_enemy";
         position = new Vector2(x, y);
         bounds = new Rectangle(x - SIZE / 2f, y - SIZE / 2f, SIZE, SIZE);
         this.maximumHealth = maximumHealth;
         health = maximumHealth;
+    }
+
+    public String getId() {
+        return id;
     }
 
     public Vector2 getPosition() {

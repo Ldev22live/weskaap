@@ -10,6 +10,7 @@ import com.weskaap.game.building.Building;
 import com.weskaap.game.building.BuildingEntrance;
 import com.weskaap.game.building.BuildingExit;
 import com.weskaap.game.building.Interior;
+import com.weskaap.game.chapel.ChapelInteriorData;
 import com.weskaap.game.combat.CombatController;
 import com.weskaap.game.combat.Combatant;
 import com.weskaap.game.enemy.EnemyAiController;
@@ -46,6 +47,8 @@ import com.weskaap.game.travel.TravelDestinationRepository;
 import com.weskaap.game.quest.QuestEvent;
 import com.weskaap.game.quest.QuestRewardService;
 import com.weskaap.game.story.StoryState;
+import com.weskaap.game.tiled.AreaData;
+import com.weskaap.game.tiled.TiledAreaLoader;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,7 +56,7 @@ import java.util.List;
 
 public class GameWorld {
 	public static final float WIDTH = 3200f;
-	public static final float HEIGHT = 2400f;
+	public static final float HEIGHT = 3200f;
 
 	private static final float GRID_SIZE = 128f;
 	private static final float MESSAGE_DURATION = 3f;
@@ -100,6 +103,8 @@ public class GameWorld {
 	private List<Rectangle> activeCollisionBounds;
 	private Building activeBuilding;
 	private Vector2 exteriorHeroPosition;
+	private List<PrototypeEnemy> savedExteriorEnemies;
+	private List<EnemyAiController> savedExteriorEnemyAiControllers;
 	private Interactable currentInteractable;
 	private Interactable previousInteractable;
 	private float currentInteractableDistance;
@@ -138,8 +143,8 @@ public class GameWorld {
 		activeArea = AreaId.RETREAT;
 		travelController = new TravelController(activeArea,
 			TravelDestinationRepository.getDestinations(), this::requestAreaTransition);
-		exteriorObstacles = createObstacles();
-		retreatRoads = new ArrayList<>(createRetreatRoads());
+		exteriorObstacles = new ArrayList<>();
+		retreatRoads = new ArrayList<>();
 		buildings = createBuildings();
 		worldItems = createWorldItems();
 		retreatStationTravelPoint = new TravelPoint(
@@ -150,7 +155,10 @@ public class GameWorld {
 		rosebankFriendAlly = new Ally("rosebank_friend");
 		areaRegistry = createAreaRegistry();
 		activeAreaDefinition = areaRegistry.get(activeArea);
+		loadArea(activeAreaDefinition);
 		exteriorHeroPosition = new Vector2(hero.getPosition());
+		savedExteriorEnemies = new ArrayList<>();
+		savedExteriorEnemyAiControllers = new ArrayList<>();
 		activeBuilding = null;
 		activeObstacles = exteriorObstacles;
 		activeInteractables = exteriorInteractables;
@@ -370,7 +378,7 @@ public class GameWorld {
 			CollisionResolver.move(hero, movement.x, movement.y, activeCollisionBounds,
 				getCurrentWorldWidth(), getCurrentWorldHeight());
 		}
-		if (activeBuilding == null) {
+		if (activeBuilding == null || isCombatAllowedInActiveBuilding()) {
 			updateEnemyAi(delta);
 		}
 		currentInteractable = findNearestInteractable();
@@ -414,9 +422,21 @@ public class GameWorld {
 				exitBuilding();
 			} else if (currentInteractable instanceof TravelPoint) {
 				travelController.openMenu();
+			} else if (currentInteractable instanceof ChapelInteriorData.ChapelStorageCrate) {
+				ChapelInteriorData.ChapelStorageCrate crate = (ChapelInteriorData.ChapelStorageCrate) currentInteractable;
+				if (!crate.isLooted()) {
+				hero.getInventory().add(crate.getContents().copy());
+				crate.markLooted();
+				}
+				questController.handleEvent(new QuestEvent(QuestObjectiveType.INTERACT_WITH_OBJECT,
+					currentInteractable.getId()));
+			} else if (!currentInteractable.getId().isBlank()) {
+				questController.handleEvent(new QuestEvent(QuestObjectiveType.INTERACT_WITH_OBJECT,
+					currentInteractable.getId()));
 			}
 		}
-		if (activeBuilding == null && hero.isAlive() && combatController.update(delta, hero, enemies)
+		if ((activeBuilding == null || isCombatAllowedInActiveBuilding()) && hero.isAlive()
+				&& combatController.update(delta, hero, enemies)
 				&& combatController.getHitCount() > 0) {
 			updateCombatFeedback(combatController.getLastHit());
 			removeDeadEnemies();
@@ -483,31 +503,19 @@ public class GameWorld {
 		shapeRenderer.setProjectionMatrix(projectionMatrix);
 	}
 
-	private List<Rectangle> createObstacles() {
-		List<Rectangle> worldObstacles = new ArrayList<>();
-		worldObstacles.add(new Rectangle(1370f, 300f, 460f, 70f));
-		worldObstacles.add(new Rectangle(1370f, 530f, 460f, 50f));
-		worldObstacles.add(new Rectangle(850f, 900f, 80f, 80f));
-		worldObstacles.add(new Rectangle(2250f, 1000f, 90f, 90f));
-		return worldObstacles;
-	}
-
-	private List<Rectangle> createRetreatRoads() {
-		return List.of(
-			new Rectangle(1500f, 350f, 200f, 1050f),
-			new Rectangle(850f, 1050f, 1500f, 180f),
-			new Rectangle(1200f, 1220f, 80f, 180f),
-			new Rectangle(2020f, 1220f, 80f, 180f));
-	}
-
 	private AreaRegistry createAreaRegistry() {
 		AreaRegistry registry = new AreaRegistry();
-		registry.register(new AreaDefinition(AreaId.RETREAT, "Retreat", WIDTH, HEIGHT,
-			new Vector2(WIDTH / 2f, HEIGHT / 2f), exteriorObstacles, retreatRoads, buildings,
-			exteriorInteractables, worldItems, enemies));
+		TiledAreaLoader loader = new TiledAreaLoader();
+		AreaData retreatData = registry.loadArea(loader, AreaId.RETREAT, "retreat_location.tmx");
+		registry.register(createRetreatArea(retreatData));
 		registry.register(createCputArea());
 		registry.register(createRosebankArea());
 		return registry;
+	}
+
+	private AreaDefinition createRetreatArea(AreaData retreatData) {
+		return RetreatAreaFactory.create(retreatData, buildings, exteriorInteractables,
+			worldItems, enemies);
 	}
 
 	private AreaDefinition createCputArea() {
@@ -549,10 +557,12 @@ public class GameWorld {
 			"older_sister_house", "Older Sister's House", "older_sister_house_interior",
 			1900f, 1400f, 320f, 240f, 140f,
 			620f, 320f, 50f, 80f, 570f, 80f);
+		Building chapel = ChapelInteriorData.createChapelBuilding();
 		addTubbyHousehold(tubbyHouse.getInterior());
 		addOlderSisterHousehold(olderSisterHouse.getInterior());
 		result.add(tubbyHouse);
 		result.add(olderSisterHouse);
+		result.add(chapel);
 		if (Gdx.app != null) {
 			for (Building building : result) {
 				Gdx.app.log("BuildingDebug", "Registered building: " + building.getName()
@@ -620,6 +630,12 @@ public class GameWorld {
 		if (wayForward != null) {
 			hero.getQuestLog().add(wayForward);
 		}
+
+		QuestRepository.register(ChapelInteriorData.createChapelQuest());
+		Quest chapelQuest = QuestRepository.getQuest("act1_l1_chapel");
+		if (chapelQuest != null) {
+			hero.getQuestLog().add(chapelQuest);
+		}
 	}
 
 	private void setupStartingEquipment() {
@@ -646,9 +662,9 @@ public class GameWorld {
 	private List<PrototypeEnemy> createEnemies() {
 		List<PrototypeEnemy> worldEnemies = new ArrayList<>();
 		LootTable basicLoot = createBasicLootTable();
-		PrototypeEnemy firstEnemy = new PrototypeEnemy(900f, 1000f, 100, EnemyAiController.ENEMY_SPEED);
+		PrototypeEnemy firstEnemy = new PrototypeEnemy("retreat_enemy", 900f, 1000f, 100, EnemyAiController.ENEMY_SPEED);
 		firstEnemy.setLootTable(basicLoot);
-		PrototypeEnemy secondEnemy = new PrototypeEnemy(2500f, 1800f, 100, EnemyAiController.ENEMY_SPEED);
+		PrototypeEnemy secondEnemy = new PrototypeEnemy("retreat_enemy", 2500f, 1800f, 100, EnemyAiController.ENEMY_SPEED);
 		secondEnemy.setLootTable(basicLoot);
 		worldEnemies.add(firstEnemy);
 		worldEnemies.add(secondEnemy);
@@ -688,7 +704,7 @@ public class GameWorld {
 			}
 			worldCollisionBounds.add(interactable.getBounds());
 		}
-		if (activeBuilding == null) {
+		if (activeBuilding == null || isCombatAllowedInActiveBuilding()) {
 			for (PrototypeEnemy enemy : enemies) {
 				worldCollisionBounds.add(enemy.getCombatBounds());
 			}
@@ -761,11 +777,17 @@ public class GameWorld {
 		activeBuilding = building;
 		activeObstacles = building.getInterior().getObstacles();
 		activeInteractables = building.getInterior().getInteractables();
+		if (building.getInterior().isCombatAllowed()) {
+			swapToInteriorEnemies(building.getInterior());
+		}
 		Vector2 spawn = building.getInterior().getPlayerSpawn();
 		hero.setPosition(spawn.x, spawn.y);
 		platformerController.reset(hero, building.getInterior());
 		activeCollisionBounds = createActiveCollisionBounds();
 		currentInteractable = null;
+		if (ChapelInteriorData.BUILDING_ID.equals(building.getId())) {
+			dialogueController.startDialogue(ChapelInteriorData.createChapelIntroDialogue());
+		}
 		interactionMessage = "Entered " + building.getId();
 		interactionMessageTimer = MESSAGE_DURATION;
 		if (Gdx.app != null) {
@@ -783,6 +805,9 @@ public class GameWorld {
 		if (Gdx.app != null) {
 			Gdx.app.log("BuildingDebug", "Exiting building: " + building.getId());
 			Gdx.app.log("BuildingDebug", "Returning exterior position: " + returnPosition);
+		}
+		if (building.getInterior().isCombatAllowed()) {
+			restoreExteriorEnemies();
 		}
 		activeBuilding = null;
 		activeObstacles = exteriorObstacles;
@@ -978,7 +1003,7 @@ public class GameWorld {
 		while (iterator.hasNext()) {
 			PrototypeEnemy enemy = iterator.next();
 			if (!enemy.isAlive()) {
-				questController.handleEvent(new QuestEvent(QuestObjectiveType.DEFEAT_ENEMY, "retreat_enemy"));
+				questController.handleEvent(new QuestEvent(QuestObjectiveType.DEFEAT_ENEMY, enemy.getId()));
 				if (!enemy.hasDroppedLoot() && enemy.getLootTable() != null) {
 					dropLoot(enemy);
 				}
@@ -1011,6 +1036,32 @@ public class GameWorld {
 			exteriorInteractables.add(prototypeItem);
 			activeCollisionBounds.add(prototypeItem.getBounds());
 		}
+	}
+
+	private boolean isCombatAllowedInActiveBuilding() {
+		return activeBuilding != null && activeBuilding.getInterior().isCombatAllowed();
+	}
+
+	private void swapToInteriorEnemies(Interior interior) {
+		savedExteriorEnemies.clear();
+		savedExteriorEnemies.addAll(enemies);
+		savedExteriorEnemyAiControllers.clear();
+		savedExteriorEnemyAiControllers.addAll(enemyAiControllers);
+		enemies.clear();
+		enemyAiControllers.clear();
+		for (PrototypeEnemy enemy : interior.getInteriorEnemies()) {
+			enemies.add(enemy);
+			enemyAiControllers.add(new EnemyAiController(enemy));
+		}
+	}
+
+	private void restoreExteriorEnemies() {
+		enemies.clear();
+		enemyAiControllers.clear();
+		enemies.addAll(savedExteriorEnemies);
+		enemyAiControllers.addAll(savedExteriorEnemyAiControllers);
+		savedExteriorEnemies.clear();
+		savedExteriorEnemyAiControllers.clear();
 	}
 
 	public void dispose() {

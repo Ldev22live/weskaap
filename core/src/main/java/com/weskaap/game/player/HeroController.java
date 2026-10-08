@@ -24,8 +24,7 @@ public class HeroController {
     }
 
     public boolean isJumpRequested() {
-        return Gdx.input.isKeyJustPressed(Input.Keys.SPACE)
-            || Gdx.input.isKeyJustPressed(Input.Keys.W)
+        return Gdx.input.isKeyJustPressed(Input.Keys.W)
             || Gdx.input.isKeyJustPressed(Input.Keys.UP);
     }
 

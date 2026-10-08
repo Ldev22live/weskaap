@@ -17,6 +17,10 @@ public interface Interactable {
         return "";
     }
 
+    default String getId() {
+        return "";
+    }
+
     default boolean canInteract(Hero hero) {
         return getInteractionPosition().dst2(hero.getPosition())
             <= getInteractionRange() * getInteractionRange();
