@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="engine.core.EngineTest" tests="23" skipped="0" failures="0" errors="0" timestamp="2026-10-21T13:08:53.925Z" hostname="LT-9Z4WFG3" time="0.177">
+  <properties/>
+  <testcase name="disposeTransitionsToDisposedState()" classname="engine.core.EngineTest" time="0.021"/>
+  <testcase name="initialStateIsUninitialized()" classname="engine.core.EngineTest" time="0.002"/>
+  <testcase name="createWithoutInitializeThrowsException()" classname="engine.core.EngineTest" time="0.009"/>
+  <testcase name="createTransitionsToRunningState()" classname="engine.core.EngineTest" time="0.002"/>
+  <testcase name="pauseTransitionsToPausedState()" classname="engine.core.EngineTest" time="0.002"/>
+  <testcase name="disposeWithoutInitializeIsSafe()" classname="engine.core.EngineTest" time="0.006"/>
+  <testcase name="updateWithInfiniteDeltaThrowsException()" classname="engine.core.EngineTest" time="0.003"/>
+  <testcase name="updateWithoutRunningStateThrowsException()" classname="engine.core.EngineTest" time="0.011"/>
+  <testcase name="resumeWhenNotPausedIsNoOp()" classname="engine.core.EngineTest" time="0.005"/>
+  <testcase name="resumeTransitionsBackToRunning()" classname="engine.core.EngineTest" time="0.003"/>
+  <testcase name="resizeWithNegativeDimensionsThrowsException()" classname="engine.core.EngineTest" time="0.005"/>
+  <testcase name="createTwiceThrowsException()" classname="engine.core.EngineTest" time="0.001"/>
+  <testcase name="resizeWithValidDimensionsSucceeds()" classname="engine.core.EngineTest" time="0.02"/>
+  <testcase name="pauseWhenNotRunningIsNoOp()" classname="engine.core.EngineTest" time="0.012"/>
+  <testcase name="updateWithValidDeltaSucceeds()" classname="engine.core.EngineTest" time="0.007"/>
+  <testcase name="updateWithNegativeDeltaThrowsException()" classname="engine.core.EngineTest" time="0.005"/>
+  <testcase name="disposeIsIdempotent()" classname="engine.core.EngineTest" time="0.004"/>
+  <testcase name="updateWithNaNDeltaThrowsException()" classname="engine.core.EngineTest" time="0.004"/>
+  <testcase name="resizeWithoutInitializeThrowsException()" classname="engine.core.EngineTest" time="0.002"/>
+  <testcase name="initializeTransitionsToInitializedState()" classname="engine.core.EngineTest" time="0.001"/>
+  <testcase name="initializeWithNullConfigThrowsException()" classname="engine.core.EngineTest" time="0.003"/>
+  <testcase name="operationsAfterDisposeThrowException()" classname="engine.core.EngineTest" time="0.006"/>
+  <testcase name="initializeTwiceThrowsException()" classname="engine.core.EngineTest" time="0.004"/>
+  <system-out><![CDATA[[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine disposed
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine paused
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine paused
+[INFO] DefaultEngine: Engine resumed
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[DEBUG] DefaultEngine: Resized to 800x600
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine disposed
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine created and running
+[INFO] DefaultEngine: Engine initialized: Test Engine
+[INFO] DefaultEngine: Engine initialized: Engine Application
+[INFO] DefaultEngine: Engine disposed
+[INFO] DefaultEngine: Engine initialized: Engine Application
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

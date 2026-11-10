@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="engine.scene.SceneManagerTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-10-21T14:34:56.769Z" hostname="LT-9Z4WFG3" time="0.024">
+  <properties/>
+  <testcase name="switchSceneRejectsAfterDisposal()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="disposeDisposesCurrentScene()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="switchSceneDeactivatesOldScene()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="switchSceneToSameSceneIsNoOp()" classname="engine.scene.SceneManagerTest" time="0.0"/>
+  <testcase name="disposeWithNoSceneIsSafe()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="managerHasNoSceneInitially()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="switchSceneOnActivationFailureRestoresOldScene()" classname="engine.scene.SceneManagerTest" time="0.003"/>
+  <testcase name="updateRoutesToCurrentScene()" classname="engine.scene.SceneManagerTest" time="0.002"/>
+  <testcase name="switchSceneDisposesOldScene()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="disposeIsIdempotent()" classname="engine.scene.SceneManagerTest" time="0.002"/>
+  <testcase name="updateThrowsWhenNoSceneActive()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="switchSceneActivatesScene()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <testcase name="switchSceneRejectsNull()" classname="engine.scene.SceneManagerTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

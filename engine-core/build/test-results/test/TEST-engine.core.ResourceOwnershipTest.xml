@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="engine.core.ResourceOwnershipTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-10-21T13:08:53.576Z" hostname="LT-9Z4WFG3" time="0.232">
+  <properties/>
+  <testcase name="resourcesDisposedInReverseOrder()" classname="engine.core.ResourceOwnershipTest" time="0.086"/>
+  <testcase name="disposeWithoutInitializeStillClearsResources()" classname="engine.core.ResourceOwnershipTest" time="0.006"/>
+  <testcase name="repeatedDisposeDoesNotReDisposeResources()" classname="engine.core.ResourceOwnershipTest" time="0.003"/>
+  <testcase name="disposeCallsDisposeOnOwnedResources()" classname="engine.core.ResourceOwnershipTest" time="0.01"/>
+  <testcase name="registerResourceAddsToOwnedResources()" classname="engine.core.ResourceOwnershipTest" time="0.003"/>
+  <testcase name="registerNullResourceThrowsException()" classname="engine.core.ResourceOwnershipTest" time="0.007"/>
+  <testcase name="registerResourceAfterDisposeThrowsException()" classname="engine.core.ResourceOwnershipTest" time="0.007"/>
+  <testcase name="resourceDisposeExceptionDoesNotPreventOtherDisposal()" classname="engine.core.ResourceOwnershipTest" time="0.005"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

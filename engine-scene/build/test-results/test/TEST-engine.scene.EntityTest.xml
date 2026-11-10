@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="engine.scene.EntityTest" tests="18" skipped="0" failures="0" errors="0" timestamp="2026-10-21T14:34:56.732Z" hostname="LT-9Z4WFG3" time="0.036">
+  <properties/>
+  <testcase name="addComponentRejectsNull()" classname="engine.scene.EntityTest" time="0.002"/>
+  <testcase name="hasComponentReturnsFalseForMissing()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="removeComponentRemovesComponent()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="entityHasNoComponentsInitially()" classname="engine.scene.EntityTest" time="0.01"/>
+  <testcase name="multipleComponentTypesCoexist()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="disposeDisposesAllComponents()" classname="engine.scene.EntityTest" time="0.002"/>
+  <testcase name="getComponentReturnsNullForMissing()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="hasComponentReturnsTrueForExisting()" classname="engine.scene.EntityTest" time="0.0"/>
+  <testcase name="addComponentDisposesReplacedComponent()" classname="engine.scene.EntityTest" time="0.0"/>
+  <testcase name="getComponentRejectsNullClass()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="removeComponentReturnsNullForMissing()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="removeComponentDisposesRemovedComponent()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="addComponentAddsComponent()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="disposedEntityCannotAddComponents()" classname="engine.scene.EntityTest" time="0.002"/>
+  <testcase name="disposeIsIdempotent()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="removeComponentRejectsNullClass()" classname="engine.scene.EntityTest" time="0.0"/>
+  <testcase name="addComponentRejectsAfterDisposal()" classname="engine.scene.EntityTest" time="0.001"/>
+  <testcase name="addComponentReplacesExistingComponent()" classname="engine.scene.EntityTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -155,8 +155,8 @@ public class GameWorld {
 		rosebankFriendAlly = new Ally("rosebank_friend");
 		areaRegistry = createAreaRegistry();
 		activeAreaDefinition = areaRegistry.get(activeArea);
-		loadArea(activeAreaDefinition);
 		exteriorHeroPosition = new Vector2(hero.getPosition());
+		loadArea(activeAreaDefinition);
 		savedExteriorEnemies = new ArrayList<>();
 		savedExteriorEnemyAiControllers = new ArrayList<>();
 		activeBuilding = null;

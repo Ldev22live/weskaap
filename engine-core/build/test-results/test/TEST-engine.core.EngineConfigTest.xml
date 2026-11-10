@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="engine.core.EngineConfigTest" tests="17" skipped="0" failures="0" errors="0" timestamp="2026-10-21T13:08:53.834Z" hostname="LT-9Z4WFG3" time="0.082">
+  <properties/>
+  <testcase name="customTitle()" classname="engine.core.EngineConfigTest" time="0.001"/>
+  <testcase name="negativeTargetFpsThrowsException()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="loggingDisabled()" classname="engine.core.EngineConfigTest" time="0.001"/>
+  <testcase name="zeroHeightThrowsException()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="zeroTargetFpsThrowsException()" classname="engine.core.EngineConfigTest" time="0.001"/>
+  <testcase name="emptyTitleThrowsException()" classname="engine.core.EngineConfigTest" time="0.007"/>
+  <testcase name="fullCustomConfig()" classname="engine.core.EngineConfigTest" time="0.001"/>
+  <testcase name="negativeHeightThrowsException()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="defaultBuilderValues()" classname="engine.core.EngineConfigTest" time="0.004"/>
+  <testcase name="blankTitleThrowsException()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="negativeWidthThrowsException()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="customDimensions()" classname="engine.core.EngineConfigTest" time="0.003"/>
+  <testcase name="vSyncDisabled()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="nullTitleThrowsException()" classname="engine.core.EngineConfigTest" time="0.002"/>
+  <testcase name="zeroWidthThrowsException()" classname="engine.core.EngineConfigTest" time="0.003"/>
+  <testcase name="builderCreatesImmutableConfig()" classname="engine.core.EngineConfigTest" time="0.003"/>
+  <testcase name="customTargetFps()" classname="engine.core.EngineConfigTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

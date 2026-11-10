@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="engine.scene.SceneNodeTest" tests="31" skipped="0" failures="0" errors="0" timestamp="2026-10-21T14:34:56.569Z" hostname="LT-9Z4WFG3" time="0.159">
+  <properties/>
+  <testcase name="worldPositionEqualsLocalForRoot()" classname="engine.scene.SceneNodeTest" time="0.049"/>
+  <testcase name="localPositionDefaultsToZero()" classname="engine.scene.SceneNodeTest" time="0.002"/>
+  <testcase name="removeChildRejectsNull()" classname="engine.scene.SceneNodeTest" time="0.003"/>
+  <testcase name="disposedNodeCannotAddChildren()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="addChildAddsToParent()" classname="engine.scene.SceneNodeTest" time="0.0"/>
+  <testcase name="removeChildReturnsFalseForNonChild()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="rootNodeHasNoParent()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="addChildRejectsCycle()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="nestedTransformsComposeCorrectly()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="addChildRejectsNull()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="addChildRejectsSelf()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="setRotationUpdatesLocalRotation()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="rootNodeHasNoChildren()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="setScaleUpdatesLocalScale()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="disposeRemovesFromParent()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="localScaleDefaultsToOne()" classname="engine.scene.SceneNodeTest" time="0.0"/>
+  <testcase name="localRotationDefaultsToZero()" classname="engine.scene.SceneNodeTest" time="0.0"/>
+  <testcase name="removeChildRemovesFromParent()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="nonUniformScaleIsSupported()" classname="engine.scene.SceneNodeTest" time="0.012"/>
+  <testcase name="disposedNodeCannotRemoveChildren()" classname="engine.scene.SceneNodeTest" time="0.002"/>
+  <testcase name="detachedNodeIsNotDisposed()" classname="engine.scene.SceneNodeTest" time="0.002"/>
+  <testcase name="disposeDisposesChildrenRecursively()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="getChildrenReturnsUnmodifiableList()" classname="engine.scene.SceneNodeTest" time="0.002"/>
+  <testcase name="setRotationRejectsNull()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="setPositionUpdatesLocalPosition()" classname="engine.scene.SceneNodeTest" time="0.007"/>
+  <testcase name="setScaleRejectsNull()" classname="engine.scene.SceneNodeTest" time="0.002"/>
+  <testcase name="addChildRemovesFromOldParent()" classname="engine.scene.SceneNodeTest" time="0.003"/>
+  <testcase name="disposeIsIdempotent()" classname="engine.scene.SceneNodeTest" time="0.002"/>
+  <testcase name="setPositionRejectsNull()" classname="engine.scene.SceneNodeTest" time="0.001"/>
+  <testcase name="worldPositionIncludesParentTransform()" classname="engine.scene.SceneNodeTest" time="0.0"/>
+  <testcase name="transformChangeInvalidatesChildren()" classname="engine.scene.SceneNodeTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
